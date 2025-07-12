@@ -205,6 +205,19 @@ export default function TestWebSocketPage() {
 			addMessage(`🎯 Extension Event: ${event.detail.type}`);
 			addMessage(`📋 Challenge: ${event.detail.challenge.title}`);
 			addMessage(`🎲 Options: ${event.detail.challenge.options.length} options`);
+			addMessage(`📊 State: ${event.detail.challenge.state}`);
+			addMessage(`🕒 Started: ${new Date(event.detail.challenge.startedAt).toLocaleTimeString()}`);
+			
+			if (event.detail.challenge.metadata) {
+				addMessage(`📈 Total Options: ${event.detail.challenge.metadata.total_options}`);
+				addMessage(`📡 Stream: ${event.detail.challenge.metadata.stream_id}`);
+				addMessage(`🎯 Event Type: ${event.detail.challenge.metadata.event_type}`);
+			}
+			
+			// Show first few options
+			event.detail.challenge.options.slice(0, 3).forEach((option: { displayName: string; tokenName: string }, index: number) => {
+				addMessage(`  ${index + 1}. ${option.displayName} (${option.tokenName})`);
+			});
 		};
 
 		document.addEventListener('challenge-update', handleChallengeUpdate as EventListener);

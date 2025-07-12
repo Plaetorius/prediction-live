@@ -71,17 +71,41 @@ export async function createChallenge(data: CreateChallengeData) {
 				streamId: data.streamId,
 				event: 'challenge:new',
 				payload: {
+					// Challenge information
 					id: challenge.id,
-					title: data.title,
-					event_type: data.eventType,
-					stream_id: data.streamId,
+					title: challenge.title,
+					event_type: challenge.event_type,
+					stream_id: challenge.stream_id,
+					state: challenge.state || 'open',
+					created_at: challenge.created_at,
+					updated_at: challenge.updated_at,
+					started_at: challenge.started_at || new Date().toISOString(),
+					
+					// Complete options information
 					options: options.map(opt => ({
 						id: opt.id,
+						challenge_id: opt.challenge_id,
 						option_key: opt.option_key,
 						display_name: opt.display_name,
 						token_name: opt.token_name,
-						odds: 1.0 // Default odds
+						created_at: opt.created_at,
+						odds: 1.0, // Default odds
+						// Additional metadata
+						metadata: {
+							created_at: opt.created_at,
+							updated_at: opt.updated_at
+						}
 					})),
+					
+					// Additional metadata
+					metadata: {
+						total_options: options.length,
+						stream_id: data.streamId,
+						event_type: data.eventType,
+						broadcast_timestamp: new Date().toISOString()
+					},
+					
+					// Timestamp for the broadcast
 					timestamp: new Date().toISOString()
 				}
 			})

@@ -6,13 +6,30 @@ interface ChallengePayload {
   title: string;
   event_type: string;
   stream_id: string;
+  state: string;
+  created_at: string;
+  updated_at?: string;
+  started_at: string;
   options: Array<{
     id: string;
+    challenge_id: string;
     option_key: string;
     display_name: string;
     token_name: string;
+    created_at: string;
+    updated_at?: string;
     odds?: number;
+    metadata?: {
+      created_at?: string;
+      updated_at?: string;
+    };
   }>;
+  metadata?: {
+    total_options: number;
+    stream_id: string;
+    event_type: string;
+    broadcast_timestamp: string;
+  };
   timestamp: string;
 }
 
@@ -176,6 +193,8 @@ export class WebSocketService {
 
   private handleChallengeBroadcast(payload: ChallengePayload): void {
     console.log('🎯 Handling challenge broadcast:', payload);
+    console.log('📋 Payload type:', typeof payload);
+    console.log('📋 Payload keys:', Object.keys(payload));
     
     // Transform the payload to match our Challenge interface
     const challenge: Challenge = {
@@ -183,16 +202,25 @@ export class WebSocketService {
       streamId: this.streamId!,
       eventType: payload.event_type,
       title: payload.title,
-      state: 'open',
-      startedAt: new Date().toISOString(),
+      state: payload.state as 'open' | 'closed' | 'resolved',
+      startedAt: payload.started_at,
+      createdAt: payload.created_at,
+      updatedAt: payload.updated_at,
       options: payload.options.map((opt) => ({
         id: opt.id,
+        challenge_id: opt.challenge_id,
         optionKey: opt.option_key || opt.display_name.toLowerCase().replace(/\s+/g, '_'),
         displayName: opt.display_name,
         tokenName: opt.token_name,
-        odds: opt.odds || 1.0
-      }))
+        odds: opt.odds || 1.0,
+        created_at: opt.created_at,
+        updated_at: opt.updated_at,
+        metadata: opt.metadata
+      })),
+      metadata: payload.metadata
     };
+    
+    console.log('🎯 Transformed challenge:', challenge);
     
     // Dispatch custom event for the content script to handle
     const event = new CustomEvent('challenge-update', {
@@ -202,6 +230,7 @@ export class WebSocketService {
       }
     });
     document.dispatchEvent(event);
+    console.log('📡 Dispatched challenge-update event');
   }
 
   disconnect(): void {
