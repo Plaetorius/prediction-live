@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 
 export default function TestWebSocketPage() {
 	const [messages, setMessages] = useState<string[]>([]);
-	const [streamId, setStreamId] = useState('otplol_');
+	const [streamId, setStreamId] = useState('f9a62876-0593-4ddf-9d43-7af4d52f858c');
 	const [isConnected, setIsConnected] = useState(false);
 	const [eventSource, setEventSource] = useState<EventSource | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -420,6 +420,48 @@ export default function TestWebSocketPage() {
 								className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50"
 							>
 								Test Challenge Details
+							</Button>
+							<Button
+								onClick={async () => {
+									if (!isConnected) {
+										addMessage('❌ Not connected to stream');
+										return;
+									}
+									
+									setIsLoading(true);
+									addMessage('🧪 Testing challenge:new event...');
+									
+									try {
+										const response = await fetch('/api/test-challenge', {
+											method: 'POST',
+											headers: {
+												'Content-Type': 'application/json',
+											},
+											body: JSON.stringify({
+												streamId: streamId
+											}),
+										});
+
+										if (response.ok) {
+											const result = await response.json();
+											addMessage(`✅ Challenge test sent successfully!`);
+											addMessage(`📊 Sent to: ${result.result.sentCount || 'unknown'} connections`);
+											addMessage(`🎯 Challenge ID: ${result.challenge.id}`);
+											addMessage(`📋 Title: ${result.challenge.title}`);
+										} else {
+											const error = await response.json();
+											addMessage(`❌ Failed to send challenge test: ${error.error}`);
+										}
+									} catch (error) {
+										addMessage(`❌ Error with challenge test: ${error}`);
+									} finally {
+										setIsLoading(false);
+									}
+								}}
+								disabled={!isConnected || isLoading}
+								className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50"
+							>
+								Test Challenge Event
 							</Button>
 							<Button
 								onClick={() => {
