@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 
 export default function TestWebSocketPage() {
 	const [messages, setMessages] = useState<string[]>([]);
-	const [streamId, setStreamId] = useState('test-stream');
+	const [streamId, setStreamId] = useState('otplol_');
 	const [isConnected, setIsConnected] = useState(false);
 	const [eventSource, setEventSource] = useState<EventSource | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -165,27 +165,27 @@ export default function TestWebSocketPage() {
 		addMessage('📡 Testing simple broadcast...');
 
 		try {
-			const response = await fetch('/api/test-broadcast', {
+			// Try the new simple test endpoint first
+			const response = await fetch('/api/test-simple-broadcast', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
-					streamId: streamId,
-					message: `Simple test message from client ${Date.now()}`
+					streamId: streamId
 				}),
 			});
 
 			if (response.ok) {
 				const result = await response.json();
-				addMessage(`✅ Simple broadcast sent: ${result.result.message}`);
-				addMessage(`📊 Sent to: ${result.result.sentCount} connections`);
+				addMessage(`✅ Simple test broadcast sent: ${result.message}`);
+				addMessage(`📊 Result: ${JSON.stringify(result.result)}`);
 			} else {
 				const error = await response.json();
-				addMessage(`❌ Failed to send simple broadcast: ${error.error}`);
+				addMessage(`❌ Failed to send simple test broadcast: ${error.error}`);
 			}
 		} catch (error) {
-			addMessage(`❌ Error with simple broadcast: ${error}`);
+			addMessage(`❌ Error with simple test broadcast: ${error}`);
 		} finally {
 			setIsLoading(false);
 		}
@@ -193,6 +193,7 @@ export default function TestWebSocketPage() {
 
 	const testChallengeDetails = () => {
 		addMessage('🧪 Testing challenge details display...');
+		addMessage('📋 This will simulate receiving a challenge event in the extension');
 		
 		// Simulate receiving a challenge event
 		const mockChallenge = {
@@ -330,6 +331,10 @@ export default function TestWebSocketPage() {
 				<Card className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/20">
 					<CardHeader>
 						<CardTitle className="text-[#f5f5f5]">SSE Test</CardTitle>
+						<p className="text-[#f5f5f5]/70 text-sm">
+							This page tests the Server-Sent Events (SSE) connection and broadcasting functionality.
+							The extension should be connected to the same stream ID to receive broadcasts.
+						</p>
 					</CardHeader>
 					<CardContent className="space-y-4">
 						<div className="flex gap-4 items-end">
@@ -369,11 +374,69 @@ export default function TestWebSocketPage() {
 								Simple Test
 							</Button>
 							<Button
+								onClick={async () => {
+									if (!isConnected) {
+										addMessage('❌ Not connected to stream');
+										return;
+									}
+									
+									setIsLoading(true);
+									addMessage('📡 Testing original broadcast endpoint...');
+									
+									try {
+										const response = await fetch('/api/test-broadcast', {
+											method: 'POST',
+											headers: {
+												'Content-Type': 'application/json',
+											},
+											body: JSON.stringify({
+												streamId: streamId,
+												message: `Original test message ${Date.now()}`
+											}),
+										});
+
+										if (response.ok) {
+											const result = await response.json();
+											addMessage(`✅ Original broadcast sent: ${result.result.message}`);
+											addMessage(`📊 Sent to: ${result.result.sentCount} connections`);
+										} else {
+											const error = await response.json();
+											addMessage(`❌ Failed to send original broadcast: ${error.error}`);
+										}
+									} catch (error) {
+										addMessage(`❌ Error with original broadcast: ${error}`);
+									} finally {
+										setIsLoading(false);
+									}
+								}}
+								disabled={!isConnected || isLoading}
+								className="bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
+							>
+								Original Test
+							</Button>
+							<Button
 								onClick={testChallengeDetails}
 								disabled={!isConnected || isLoading}
 								className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50"
 							>
 								Test Challenge Details
+							</Button>
+							<Button
+								onClick={() => {
+									addMessage('🔍 Checking active connections...');
+									fetch(`/api/debug-connections?streamId=${streamId}`)
+										.then(res => res.json())
+										.then(data => {
+											addMessage(`🔍 Debug info: ${JSON.stringify(data)}`);
+										})
+										.catch(err => {
+											addMessage(`❌ Debug error: ${err}`);
+										});
+								}}
+								variant="outline"
+								className="text-[#f5f5f5] border-[#f5f5f5]/20 hover:bg-[#f5f5f5]/10"
+							>
+								Debug
 							</Button>
 							<Button
 								onClick={clearMessages}

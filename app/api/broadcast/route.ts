@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
 
 		console.log('🔔 Broadcasting event:', event, 'to stream:', streamId);
 		console.log('📊 Active connections for stream:', activeConnections.get(streamId)?.size || 0);
+		console.log('📋 Payload being broadcast:', JSON.stringify(payload, null, 2));
 
 		// Get all active connections for this stream
 		const connections = activeConnections.get(streamId);
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
 			timestamp: new Date().toISOString()
 		});
 
+		console.log('📤 Message being sent to clients:', message);
 		const encoder = new TextEncoder();
 		const encodedMessage = encoder.encode(`data: ${message}\n\n`);
 

@@ -133,8 +133,12 @@ export class WebSocketService {
             this.handleChallengeBroadcast(data.data);
           } else if (data.type === 'connected') {
             console.log('✅ Successfully connected to stream:', data.streamId);
+          } else if (data.type === 'test:simple' || data.type === 'test:message') {
+            console.log('🧪 Received test message:', data);
+            console.log('📝 Test message content:', data.data?.message || 'No message content');
           } else {
             console.log('❓ Unknown message type:', data.type);
+            console.log('📦 Full message data:', data);
           }
         } catch (error) {
           console.error('❌ Error parsing SSE message:', error);

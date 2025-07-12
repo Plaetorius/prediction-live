@@ -3,24 +3,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
 	try {
 		const body = await request.json();
-		const { streamId, message } = body;
+		const { streamId } = body;
 
-		if (!streamId || !message) {
+		if (!streamId) {
 			return NextResponse.json(
-				{ error: 'Missing required fields: streamId, message' },
+				{ error: 'Missing required field: streamId' },
 				{ status: 400 }
 			);
 		}
 
-		console.log('🧪 Test broadcast requested for stream:', streamId);
-		console.log('📝 Message:', message);
+		console.log('🧪 Simple test broadcast for stream:', streamId);
 
-		// Send the test message to the broadcast endpoint
+		// Send a simple test message directly to the broadcast endpoint
 		const broadcastUrl = process.env.NODE_ENV === 'development' 
 			? 'http://localhost:3000/api/broadcast'
 			: 'https://prediction-live.vercel.app/api/broadcast';
 
-		console.log('🌐 Sending to broadcast endpoint:', broadcastUrl);
+		console.log('🌐 Sending simple test to:', broadcastUrl);
 
 		const response = await fetch(broadcastUrl, {
 			method: 'POST',
@@ -29,32 +28,33 @@ export async function POST(request: NextRequest) {
 			},
 			body: JSON.stringify({
 				streamId: streamId,
-				event: 'test:message',
+				event: 'test:simple',
 				payload: {
-					message: message,
-					timestamp: new Date().toISOString(),
-					test: true
+					message: `Simple test message at ${new Date().toISOString()}`,
+					test: true,
+					timestamp: new Date().toISOString()
 				}
 			}),
 		});
 
 		if (response.ok) {
 			const result = await response.json();
-			console.log('✅ Test broadcast successful:', result);
+			console.log('✅ Simple test broadcast successful:', result);
 			return NextResponse.json({
 				success: true,
-				result: result
+				result: result,
+				message: 'Simple test message sent successfully'
 			});
 		} else {
 			const error = await response.json();
-			console.error('❌ Test broadcast failed:', error);
+			console.error('❌ Simple test broadcast failed:', error);
 			return NextResponse.json({
 				success: false,
 				error: error
 			}, { status: response.status });
 		}
 	} catch (error) {
-		console.error('❌ Test broadcast error:', error);
+		console.error('❌ Simple test broadcast error:', error);
 		return NextResponse.json(
 			{ error: 'Internal server error' },
 			{ status: 500 }
