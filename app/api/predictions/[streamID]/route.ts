@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function OPTIONS(request: NextRequest) {
 	const origin = request.headers.get("origin") || undefined;
-	return NextResponse.json({}, { status: 200, headers: corsHeaders(origin) });
+	return NextResponse.json({}, { status: 204, headers: corsHeaders(origin) });
 }
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ streamID: string }> }) {
