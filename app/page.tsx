@@ -3,6 +3,7 @@
 import { DeployButton } from "@/components/deploy-button";
 import { AuthButton } from "@/components/auth-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { PreRegisterForm } from "@/components/pre-register-form";
 import Link from "next/link";
 
 export default function Home() {
@@ -93,6 +94,11 @@ export default function Home() {
               <button className="px-12 py-6 border-2 border-[#f5f5f5]/30 rounded-3xl text-[#f5f5f5] font-bold text-xl backdrop-blur-xl bg-[#f5f5f5]/10 hover:bg-[#f5f5f5]/20 hover:border-[#FF0052]/70 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1">
                 WATCH DEMO
               </button>
+            </div>
+
+            {/* Pre-Registration Form */}
+            <div className="mb-20">
+              <PreRegisterForm />
             </div>
           </div>
 
