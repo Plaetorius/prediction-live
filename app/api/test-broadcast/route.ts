@@ -15,7 +15,12 @@ export async function POST(request: NextRequest) {
 		console.log('🧪 Testing broadcast to stream:', streamId);
 
 		// Send a test broadcast
-		const broadcastResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/broadcast`, {
+		// In production, use the actual production URL
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? 'https://prediction-live.vercel.app'
+			: (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+			
+		const broadcastResponse = await fetch(`${baseUrl}/api/broadcast`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',

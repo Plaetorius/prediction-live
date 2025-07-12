@@ -62,7 +62,17 @@ export async function createChallenge(data: CreateChallengeData) {
 		console.log('🔔 Broadcasting new challenge to stream:', data.streamId);
 		
 		// Use the dedicated broadcast endpoint for better reliability
-		const broadcastResponse = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/broadcast`, {
+		// In production, use the actual production URL
+		const baseUrl = process.env.NODE_ENV === 'production' 
+			? 'https://prediction-live.vercel.app'
+			: (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+			
+		const broadcastUrl = `${baseUrl}/api/broadcast`;
+		console.log('🌐 Using broadcast URL:', broadcastUrl);
+		console.log('🔧 Environment:', process.env.NODE_ENV);
+		console.log('🔧 NEXT_PUBLIC_APP_URL:', process.env.NEXT_PUBLIC_APP_URL);
+			
+		const broadcastResponse = await fetch(broadcastUrl, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
