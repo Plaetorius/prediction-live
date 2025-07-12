@@ -38,6 +38,7 @@ export class WebSocketService {
   private streamId: string | null = null;
   private isConnected: boolean = false;
   private eventSource: EventSource | null = null;
+  private connectionStatusCallback: ((connected: boolean) => void) | null = null;
 
   constructor() {
     // Initialize Supabase client
@@ -45,6 +46,16 @@ export class WebSocketService {
       'https://iitjsrlhyffgtwiwbqln.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlpdGpzcmxoeWZmZ3R3aXdicWxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyNjk0NDEsImV4cCI6MjA2Nzg0NTQ0MX0.kak2FanxJX0tw2eXad5dP5pvG97aeeULEqrwvuZau18'
     );
+  }
+
+  onConnectionStatusChange(callback: (connected: boolean) => void): void {
+    this.connectionStatusCallback = callback;
+  }
+
+  private notifyConnectionStatusChange(): void {
+    if (this.connectionStatusCallback) {
+      this.connectionStatusCallback(this.isConnected);
+    }
   }
 
   async checkStreamStatus(streamId: string): Promise<StreamStatusResponse> {
@@ -128,6 +139,7 @@ export class WebSocketService {
         console.log('✅ SSE connection opened successfully');
         console.log('📡 Ready to receive messages from server');
         this.isConnected = true;
+        this.notifyConnectionStatusChange();
       };
 
       this.eventSource.onmessage = (event) => {
@@ -162,6 +174,7 @@ export class WebSocketService {
         console.error('❌ SSE connection error:', error);
         console.error('🔌 SSE connection state:', this.eventSource?.readyState);
         this.isConnected = false;
+        this.notifyConnectionStatusChange();
       };
     } catch (error) {
       console.error('❌ Error connecting via SSE:', error);
@@ -318,6 +331,7 @@ export class WebSocketService {
     
     this.isConnected = false;
     this.streamId = null;
+    this.notifyConnectionStatusChange();
   }
 
   isStreamConnected(): boolean {

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 
 export default function TestWebSocketPage() {
 	const [messages, setMessages] = useState<string[]>([]);
-	const [streamId, setStreamId] = useState('f9a62876-0593-4ddf-9d43-7af4d52f858c');
+	const [streamId, setStreamId] = useState('otplol_');
 	const [isConnected, setIsConnected] = useState(false);
 	const [eventSource, setEventSource] = useState<EventSource | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,7 @@ export default function TestWebSocketPage() {
 		setMessages(prev => [...prev.slice(-50), `${new Date().toLocaleTimeString()}: ${message}`]);
 	};
 
-	const connectToStream = () => {
+	const connectToStream = async () => {
 		if (eventSource) {
 			eventSource.close();
 		}
@@ -26,13 +26,33 @@ export default function TestWebSocketPage() {
 		addMessage('Connecting to SSE...');
 
 		try {
-			const es = new EventSource(`/api/broadcast?streamId=${streamId}`);
+			// If streamId is not a UUID, look it up
+			let actualStreamId = streamId;
+			if (!/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(streamId)) {
+				addMessage('🔎 Looking up stream ID for username: ' + streamId);
+				const lookupRes = await fetch(`/api/streams/lookup?twitchStreamId=${encodeURIComponent(streamId)}`);
+				if (!lookupRes.ok) {
+					addMessage('❌ Failed to look up stream ID for username: ' + streamId);
+					setIsLoading(false);
+					return;
+				}
+				const lookupData = await lookupRes.json();
+				actualStreamId = lookupData.id;
+				if (!actualStreamId) {
+					addMessage('❌ No stream ID found for username: ' + streamId);
+					setIsLoading(false);
+					return;
+				}
+				addMessage('✅ Found stream ID: ' + actualStreamId + ' for username: ' + streamId);
+			}
+
+			const es = new EventSource(`/api/broadcast?streamId=${actualStreamId}`);
 			
 			es.onopen = () => {
 				console.log('🔌 SSE connection opened');
 				setIsConnected(true);
 				setIsLoading(false);
-				addMessage('✅ Connected to SSE');
+				addMessage('✅ Connected to SSE with stream ID: ' + actualStreamId);
 			};
 
 			es.onmessage = (event) => {
@@ -339,13 +359,14 @@ export default function TestWebSocketPage() {
 					<CardContent className="space-y-4">
 						<div className="flex gap-4 items-end">
 							<div className="flex-1">
-								<Label htmlFor="streamId" className="text-[#f5f5f5]">Stream ID from Supabase</Label>
+								<Label htmlFor="streamId" className="text-[#f5f5f5]">Twitch Username or Stream UUID</Label>
 								<Input
 									id="streamId"
 									value={streamId}
 									onChange={(e) => setStreamId(e.target.value)}
 									className="bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5]"
 									disabled={isConnected}
+									placeholder="e.g., otplol_ or f9a62876-0593-4ddf-9d43-7af4d52f858c"
 								/>
 							</div>
 							<Button
@@ -432,13 +453,33 @@ export default function TestWebSocketPage() {
 									addMessage('🧪 Testing challenge:new event...');
 									
 									try {
+										// If streamId is not a UUID, look it up
+										let actualStreamId = streamId;
+										if (!/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(streamId)) {
+											addMessage('🔎 Looking up stream ID for challenge broadcast: ' + streamId);
+											const lookupRes = await fetch(`/api/streams/lookup?twitchStreamId=${encodeURIComponent(streamId)}`);
+											if (!lookupRes.ok) {
+												addMessage('❌ Failed to look up stream ID for challenge broadcast: ' + streamId);
+												setIsLoading(false);
+												return;
+											}
+											const lookupData = await lookupRes.json();
+											actualStreamId = lookupData.id;
+											if (!actualStreamId) {
+												addMessage('❌ No stream ID found for challenge broadcast: ' + streamId);
+												setIsLoading(false);
+												return;
+											}
+											addMessage('✅ Using stream ID: ' + actualStreamId + ' for challenge broadcast');
+										}
+
 										const response = await fetch('/api/test-challenge', {
 											method: 'POST',
 											headers: {
 												'Content-Type': 'application/json',
 											},
 											body: JSON.stringify({
-												streamId: streamId
+												streamId: actualStreamId
 											}),
 										});
 
