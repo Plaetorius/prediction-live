@@ -42,7 +42,7 @@ export default function TestWebSocket() {
 				eventSource.close();
 			}
 		};
-	}, [streamId, connectToStream]);
+	}, [streamId, connectToStream, eventSource]);
 
 	const testChallengeCreation = async () => {
 		try {
