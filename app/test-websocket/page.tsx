@@ -327,7 +327,7 @@ export default function TestWebSocketPage() {
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-[#0B0518] via-[#1a0f2e] to-[#0B0518] p-8">
-			<div className="max-w-4xl mx-auto space-y-6">
+			<div className="mx-auto space-y-6">
 				<Card className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/20">
 					<CardHeader>
 						<CardTitle className="text-[#f5f5f5]">SSE Test</CardTitle>
