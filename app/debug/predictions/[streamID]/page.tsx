@@ -12,14 +12,14 @@ interface LogEntry {
   error?: string;
 }
 
-export default function PredictionsDebugPage({ params }: { params: Promise<{ streamID: string }> }) {
+export default function PredictionsDebugPage({ params }: { params: Promise<{ streamId: string }> }) {
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [streamID, setStreamID] = useState<string>('');
+  const [streamId, setStreamId] = useState<string>('');
 
   useEffect(() => {
-    // Get the streamID from params
-    params.then(({ streamID }) => {
-      setStreamID(streamID);
+    // Get the streamId from params
+    params.then(({ streamId }) => {
+      setStreamId(streamId);
     });
 
     // Create a WebSocket connection for real-time logs
@@ -41,14 +41,14 @@ export default function PredictionsDebugPage({ params }: { params: Promise<{ str
 
   const testFetch = async () => {
     try {
-      const response = await fetch(`/api/predictions/${streamID}`);
+      const response = await fetch(`/api/predictions/${streamId}`);
       const data = await response.json();
       
       const logEntry: LogEntry = {
         id: Date.now().toString(),
         timestamp: new Date().toISOString(),
         method: 'GET',
-        url: `/api/predictions/${streamID}`,
+        url: `/api/predictions/${streamId}`,
         status: response.status,
         response: data
       };
@@ -59,7 +59,7 @@ export default function PredictionsDebugPage({ params }: { params: Promise<{ str
         id: Date.now().toString(),
         timestamp: new Date().toISOString(),
         method: 'GET',
-        url: `/api/predictions/${streamID}`,
+        url: `/api/predictions/${streamId}`,
         error: error instanceof Error ? error.message : 'Unknown error'
       };
       
@@ -94,10 +94,10 @@ export default function PredictionsDebugPage({ params }: { params: Promise<{ str
 
         <div className="mb-4">
           <p className="text-gray-300">
-            <strong>Stream ID:</strong> {streamID || 'Loading...'}
+            <strong>Stream ID:</strong> {streamId || 'Loading...'}
           </p>
           <p className="text-gray-300">
-            <strong>API Endpoint:</strong> /api/predictions/{streamID}
+            <strong>API Endpoint:</strong> /api/predictions/{streamId}
           </p>
         </div>
 
@@ -170,7 +170,7 @@ export default function PredictionsDebugPage({ params }: { params: Promise<{ str
             <div>
               <label className="block text-sm font-medium mb-2">Test with different Stream IDs:</label>
               <div className="flex gap-2">
-                {['test123', 'demo456', 'live789', streamID].filter(Boolean).map((id) => (
+                {['test123', 'demo456', 'live789', streamId].filter(Boolean).map((id) => (
                   <button
                     key={id}
                     onClick={() => fetch(`/api/predictions/${id}`).then(r => r.json()).then(data => {
