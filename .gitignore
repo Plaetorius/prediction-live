@@ -43,4 +43,6 @@ next-env.d.ts
 
 
 content.ts
+*/content.ts
 extension-websocket-service.ts
+*/extension-websocket-service.ts
