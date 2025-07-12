@@ -16,12 +16,17 @@ export async function POST(request: NextRequest) {
 		}
 
 		console.log('🔔 Broadcasting event:', event, 'to stream:', streamId);
+		console.log('📊 Active connections for stream:', activeConnections.get(streamId)?.size || 0);
 
 		// Get all active connections for this stream
 		const connections = activeConnections.get(streamId);
 		if (!connections || connections.size === 0) {
 			console.log('📭 No active connections for stream:', streamId);
-			return NextResponse.json({ message: 'No active connections' });
+			return NextResponse.json({ 
+				message: 'No active connections',
+				streamId,
+				eventType: event
+			});
 		}
 
 		// Send the message to all connected clients
@@ -35,6 +40,9 @@ export async function POST(request: NextRequest) {
 		const encodedMessage = encoder.encode(`data: ${message}\n\n`);
 
 		let sentCount = 0;
+		let failedCount = 0;
+		const connectionsToRemove: ReadableStreamDefaultController[] = [];
+
 		for (const controller of connections) {
 			try {
 				controller.enqueue(encodedMessage);
@@ -42,14 +50,23 @@ export async function POST(request: NextRequest) {
 				console.log(`📤 Sent ${event} event to connection ${sentCount}`);
 			} catch (error) {
 				console.error('❌ Error sending to connection:', error);
+				failedCount++;
+				connectionsToRemove.push(controller);
 			}
 		}
 
-		console.log(`✅ Broadcast sent to ${sentCount} connections`);
+		// Clean up failed connections
+		for (const controller of connectionsToRemove) {
+			connections.delete(controller);
+		}
+
+		console.log(`✅ Broadcast sent to ${sentCount} connections, ${failedCount} failed`);
 		return NextResponse.json({ 
 			message: `Broadcast sent to ${sentCount} connections`,
 			sentCount,
-			eventType: event
+			failedCount,
+			eventType: event,
+			streamId
 		});
 
 	} catch (error) {
@@ -77,7 +94,8 @@ export async function GET(request: NextRequest) {
 				if (!activeConnections.has(streamId)) {
 					activeConnections.set(streamId, new Set());
 				}
-				activeConnections.get(streamId)!.add(controller);
+				const connections = activeConnections.get(streamId)!;
+				connections.add(controller);
 
 				// Send initial connection message
 				const connectMessage = JSON.stringify({
@@ -88,15 +106,17 @@ export async function GET(request: NextRequest) {
 				controller.enqueue(encoder.encode(`data: ${connectMessage}\n\n`));
 
 				console.log(`🔌 New SSE connection for stream: ${streamId}`);
+				console.log(`📊 Total connections for stream ${streamId}: ${connections.size}`);
 			},
 			cancel() {
 				// Remove this connection when it's closed
 				const connections = activeConnections.get(streamId);
 				if (connections) {
-					// Note: We can't access controller here, so we'll clean up on next broadcast
-					// This is a limitation of the current approach
+					// Note: We can't access controller here due to scope limitations
+					// Connections will be cleaned up on next broadcast or when they fail
+					console.log(`🔌 SSE connection closed for stream: ${streamId}`);
+					console.log(`📊 Remaining connections for stream ${streamId}: ${connections.size}`);
 				}
-				console.log(`🔌 SSE connection closed for stream: ${streamId}`);
 			}
 		});
 

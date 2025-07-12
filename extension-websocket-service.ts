@@ -103,34 +103,48 @@ export class WebSocketService {
       
       // Close existing connection if any
       if (this.eventSource) {
+        console.log('🔄 Closing existing SSE connection');
         this.eventSource.close();
       }
 
-      // Connect to the SSE endpoint
-      this.eventSource = new EventSource(`https://prediction-live.vercel.app/api/ws?streamId=${streamId}`);
+      // Connect to the broadcast endpoint
+      const sseUrl = `https://prediction-live.vercel.app/api/broadcast?streamId=${streamId}`;
+      console.log('🌐 Creating SSE connection to:', sseUrl);
+      this.eventSource = new EventSource(sseUrl);
       
       this.eventSource.onopen = () => {
-        console.log('✅ SSE connection opened');
+        console.log('✅ SSE connection opened successfully');
+        console.log('📡 Ready to receive messages from server');
         this.isConnected = true;
       };
 
       this.eventSource.onmessage = (event) => {
+        console.log('📨 Raw SSE message received:', event);
+        console.log('📄 Message data:', event.data);
+        
         try {
           const data = JSON.parse(event.data);
-          console.log('📨 Received SSE message:', data);
+          console.log('🔍 Parsed SSE message:', data);
+          console.log('📋 Message type:', data.type);
+          console.log('📦 Message payload:', data.data || data);
           
           if (data.type === 'challenge:new') {
+            console.log('🎯 Processing challenge:new event');
             this.handleChallengeBroadcast(data.data);
           } else if (data.type === 'connected') {
             console.log('✅ Successfully connected to stream:', data.streamId);
+          } else {
+            console.log('❓ Unknown message type:', data.type);
           }
         } catch (error) {
           console.error('❌ Error parsing SSE message:', error);
+          console.error('📄 Raw message that failed to parse:', event.data);
         }
       };
 
       this.eventSource.onerror = (error) => {
         console.error('❌ SSE connection error:', error);
+        console.error('🔌 SSE connection state:', this.eventSource?.readyState);
         this.isConnected = false;
       };
     } catch (error) {
@@ -220,7 +234,45 @@ export class WebSocketService {
       metadata: payload.metadata
     };
     
-    console.log('🎯 Transformed challenge:', challenge);
+    // Display full challenge details in console
+    console.log('🎯 ===== CHALLENGE DETAILS =====');
+    console.log('📋 Challenge ID:', challenge.id);
+    console.log('📋 Title:', challenge.title);
+    console.log('📋 Stream ID:', challenge.streamId);
+    console.log('📋 Event Type:', challenge.eventType);
+    console.log('📋 State:', challenge.state);
+    console.log('📋 Started At:', challenge.startedAt);
+    console.log('📋 Created At:', challenge.createdAt);
+    console.log('📋 Updated At:', challenge.updatedAt);
+    
+    console.log('🎲 ===== OPTIONS =====');
+    challenge.options.forEach((option, index) => {
+      console.log(`  ${index + 1}. Option Details:`);
+      console.log(`     ID: ${option.id}`);
+      console.log(`     Challenge ID: ${option.challenge_id}`);
+      console.log(`     Option Key: ${option.optionKey}`);
+      console.log(`     Display Name: ${option.displayName}`);
+      console.log(`     Token Name: ${option.tokenName}`);
+      console.log(`     Odds: ${option.odds}`);
+      console.log(`     Created At: ${option.created_at}`);
+      console.log(`     Updated At: ${option.updated_at}`);
+      if (option.metadata) {
+        console.log(`     Metadata:`, option.metadata);
+      }
+    });
+    
+    if (challenge.metadata) {
+      console.log('📊 ===== METADATA =====');
+      console.log('📊 Total Options:', challenge.metadata.total_options);
+      console.log('📊 Stream ID:', challenge.metadata.stream_id);
+      console.log('📊 Event Type:', challenge.metadata.event_type);
+      console.log('📊 Broadcast Timestamp:', challenge.metadata.broadcast_timestamp);
+    }
+    
+    console.log('🎯 ===== END CHALLENGE DETAILS =====');
+    
+    // Also log the raw payload for debugging
+    console.log('🔍 Raw payload for debugging:', JSON.stringify(payload, null, 2));
     
     // Dispatch custom event for the content script to handle
     const event = new CustomEvent('challenge-update', {

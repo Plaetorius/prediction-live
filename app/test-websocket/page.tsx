@@ -165,24 +165,21 @@ export default function TestWebSocketPage() {
 		addMessage('📡 Testing simple broadcast...');
 
 		try {
-			const response = await fetch('/api/broadcast', {
+			const response = await fetch('/api/test-broadcast', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
 				},
 				body: JSON.stringify({
 					streamId: streamId,
-					event: 'test:event',
-					payload: {
-						message: `Simple test message from client ${Date.now()}`,
-						timestamp: new Date().toISOString()
-					}
+					message: `Simple test message from client ${Date.now()}`
 				}),
 			});
 
 			if (response.ok) {
 				const result = await response.json();
-				addMessage(`✅ Simple broadcast sent: ${result.message}`);
+				addMessage(`✅ Simple broadcast sent: ${result.result.message}`);
+				addMessage(`📊 Sent to: ${result.result.sentCount} connections`);
 			} else {
 				const error = await response.json();
 				addMessage(`❌ Failed to send simple broadcast: ${error.error}`);
@@ -194,6 +191,69 @@ export default function TestWebSocketPage() {
 		}
 	};
 
+	const testChallengeDetails = () => {
+		addMessage('🧪 Testing challenge details display...');
+		
+		// Simulate receiving a challenge event
+		const mockChallenge = {
+			id: 'test-challenge-123',
+			streamId: streamId,
+			eventType: 'test-match',
+			title: 'Test Challenge with Full Details',
+			state: 'open' as const,
+			startedAt: new Date().toISOString(),
+			createdAt: new Date().toISOString(),
+			updatedAt: new Date().toISOString(),
+			options: [
+				{
+					id: 'option-1',
+					challenge_id: 'test-challenge-123',
+					optionKey: 'team_a',
+					displayName: 'Team Alpha',
+					tokenName: 'TEAM_ALPHA',
+					odds: 1.5,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					metadata: {
+						created_at: new Date().toISOString(),
+						updated_at: new Date().toISOString()
+					}
+				},
+				{
+					id: 'option-2',
+					challenge_id: 'test-challenge-123',
+					optionKey: 'team_b',
+					displayName: 'Team Beta',
+					tokenName: 'TEAM_BETA',
+					odds: 2.0,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString(),
+					metadata: {
+						created_at: new Date().toISOString(),
+						updated_at: new Date().toISOString()
+					}
+				}
+			],
+			metadata: {
+				total_options: 2,
+				stream_id: streamId,
+				event_type: 'test-match',
+				broadcast_timestamp: new Date().toISOString()
+			}
+		};
+		
+		// Dispatch the mock event
+		const event = new CustomEvent('challenge-update', {
+			detail: {
+				type: 'challenge:new',
+				challenge: mockChallenge
+			}
+		});
+		document.dispatchEvent(event);
+		
+		addMessage('✅ Mock challenge event dispatched - check console for details');
+	};
+
 	const clearMessages = () => {
 		setMessages([]);
 	};
@@ -202,22 +262,56 @@ export default function TestWebSocketPage() {
 		// Listen for challenge-update events (simulating extension behavior)
 		const handleChallengeUpdate = (event: CustomEvent) => {
 			console.log('🎯 Extension received challenge-update event:', event.detail);
+			
+			// Log full challenge details to console
+			console.log('🎯 ===== FULL CHALLENGE DETAILS =====');
+			console.log('Challenge Object:', event.detail.challenge);
+			console.log('Challenge ID:', event.detail.challenge.id);
+			console.log('Challenge Title:', event.detail.challenge.title);
+			console.log('Challenge State:', event.detail.challenge.state);
+			console.log('Challenge Stream ID:', event.detail.challenge.streamId);
+			console.log('Challenge Event Type:', event.detail.challenge.eventType);
+			console.log('Challenge Started At:', event.detail.challenge.startedAt);
+			console.log('Challenge Created At:', event.detail.challenge.createdAt);
+			console.log('Challenge Updated At:', event.detail.challenge.updatedAt);
+			
+			console.log('🎲 ===== ALL OPTIONS =====');
+			event.detail.challenge.options.forEach((option: { displayName: string; tokenName: string; optionKey: string; odds: number; id: string; challenge_id: string; created_at?: string; updated_at?: string; metadata?: { created_at?: string; updated_at?: string } }, index: number) => {
+				console.log(`Option ${index + 1}:`, option);
+			});
+			
+			if (event.detail.challenge.metadata) {
+				console.log('📊 ===== METADATA =====');
+				console.log('Metadata:', event.detail.challenge.metadata);
+			}
+			
+			console.log('🎯 ===== END FULL CHALLENGE DETAILS =====');
+			
 			addMessage(`🎯 Extension Event: ${event.detail.type}`);
 			addMessage(`📋 Challenge: ${event.detail.challenge.title}`);
 			addMessage(`🎲 Options: ${event.detail.challenge.options.length} options`);
 			addMessage(`📊 State: ${event.detail.challenge.state}`);
 			addMessage(`🕒 Started: ${new Date(event.detail.challenge.startedAt).toLocaleTimeString()}`);
+			addMessage(`📅 Created: ${new Date(event.detail.challenge.createdAt || '').toLocaleTimeString()}`);
+			addMessage(`🔄 Updated: ${new Date(event.detail.challenge.updatedAt || '').toLocaleTimeString()}`);
 			
 			if (event.detail.challenge.metadata) {
 				addMessage(`📈 Total Options: ${event.detail.challenge.metadata.total_options}`);
 				addMessage(`📡 Stream: ${event.detail.challenge.metadata.stream_id}`);
 				addMessage(`🎯 Event Type: ${event.detail.challenge.metadata.event_type}`);
+				addMessage(`📡 Broadcast: ${new Date(event.detail.challenge.metadata.broadcast_timestamp).toLocaleTimeString()}`);
 			}
 			
-			// Show first few options
-			event.detail.challenge.options.slice(0, 3).forEach((option: { displayName: string; tokenName: string }, index: number) => {
+			// Show all options with details
+			addMessage(`🎲 ===== OPTIONS =====`);
+			event.detail.challenge.options.forEach((option: { displayName: string; tokenName: string; optionKey: string; odds: number; id: string }, index: number) => {
 				addMessage(`  ${index + 1}. ${option.displayName} (${option.tokenName})`);
+				addMessage(`     Key: ${option.optionKey} | Odds: ${option.odds} | ID: ${option.id}`);
 			});
+			
+			// Show full challenge object for debugging
+			addMessage(`🔍 Full Challenge Object:`);
+			addMessage(JSON.stringify(event.detail.challenge, null, 2));
 		};
 
 		document.addEventListener('challenge-update', handleChallengeUpdate as EventListener);
@@ -273,6 +367,13 @@ export default function TestWebSocketPage() {
 								className="bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50"
 							>
 								Simple Test
+							</Button>
+							<Button
+								onClick={testChallengeDetails}
+								disabled={!isConnected || isLoading}
+								className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50"
+							>
+								Test Challenge Details
 							</Button>
 							<Button
 								onClick={clearMessages}
