@@ -1,7 +1,12 @@
+import { corsHeaders } from "@/lib/utils";
 import { NextRequest, NextResponse } from "next/server";
+
+
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ streamID: string }> }) {
   const { streamID } = await params;
+	const origin = request.headers.get("origin") || undefined;
+
 
 	console.log("streamID", streamID);
 	console.log("request", request);
@@ -12,7 +17,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 			hasActiveStream: true, 
 			streamID: streamID ? streamID : "otplol_", // TODO: remove this
 		},
-		{ status: 200 } 
+		{ status: 200, headers: corsHeaders(origin) }
 	);
 
 	console.log("response", response);
