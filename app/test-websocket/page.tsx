@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export default function TestWebSocket() {
 	const [events, setEvents] = useState<Record<string, unknown>[]>([]);
@@ -8,7 +8,7 @@ export default function TestWebSocket() {
 	const [isConnected, setIsConnected] = useState(false);
 	const [eventSource, setEventSource] = useState<EventSource | null>(null);
 
-	const connectToStream = (newStreamId: string) => {
+	const connectToStream = useCallback((newStreamId: string) => {
 		if (eventSource) {
 			eventSource.close();
 		}
@@ -32,7 +32,7 @@ export default function TestWebSocket() {
 		};
 
 		setEventSource(newEventSource);
-	};
+	}, [eventSource]);
 
 	useEffect(() => {
 		connectToStream(streamId);
@@ -42,7 +42,7 @@ export default function TestWebSocket() {
 				eventSource.close();
 			}
 		};
-	}, [streamId]);
+	}, [streamId, connectToStream]);
 
 	const testChallengeCreation = async () => {
 		try {
