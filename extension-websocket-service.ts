@@ -70,26 +70,38 @@ export class WebSocketService {
     }
   }
 
-  async connectToStream(streamId: string): Promise<boolean> {
+  async connectToStream(streamOrId: string): Promise<boolean> {
     try {
+      let streamId = streamOrId;
+      // If the input is not a UUID, treat it as a Twitch username and look up the UUID
+      if (!/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(streamOrId)) {
+        console.log('🔎 Looking up stream ID for Twitch username:', streamOrId);
+        const lookupRes = await fetch(`https://prediction-live.vercel.app/api/streams/lookup?twitchStreamId=${encodeURIComponent(streamOrId)}`);
+        if (!lookupRes.ok) {
+          console.error('❌ Failed to look up stream ID for username:', streamOrId);
+          return false;
+        }
+        const lookupData = await lookupRes.json();
+        streamId = lookupData.id;
+        if (!streamId) {
+          console.error('❌ No stream ID found for username:', streamOrId);
+          return false;
+        }
+        console.log('✅ Found stream ID:', streamId, 'for username:', streamOrId);
+      }
+
       console.log('🔌 Connecting to stream:', streamId);
-      
       // Check if stream is open for challenges
       const streamStatus = await this.checkStreamStatus(streamId);
-      
       if (!streamStatus.open) {
         console.log('❌ Stream not open for challenges:', streamId);
         return false;
       }
-
       this.streamId = streamId;
-      
       // Method 1: Use Server-Sent Events (SSE) for better browser extension compatibility
       await this.connectViaSSE(streamId);
-      
       // Method 2: Also try Supabase real-time as backup
       await this.connectViaSupabase(streamId);
-      
       return true;
     } catch (error) {
       console.error('❌ Error connecting to stream:', error);
