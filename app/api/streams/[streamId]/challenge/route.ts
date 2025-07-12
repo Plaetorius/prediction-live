@@ -6,19 +6,18 @@ export async function OPTIONS(request: NextRequest) {
 	return NextResponse.json({}, { status: 204, headers: corsHeaders(origin) });
 }
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ streamID: string }> }) {
-  const { streamID } = await params;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ streamId: string }> }) {
+  const { streamId } = await params;
 	const origin = request.headers.get("origin") || undefined;
 
 
-	console.log("streamID", streamID);
+	console.log("streamID", streamId);
 	console.log("request", request);
 
 	const response =NextResponse.json(
 		{
-			type: "stream_status",
-			hasActiveStream: true, 
-			streamID: streamID ? streamID : "otplol_", // TODO: remove this
+			open: true, 
+			streamId: streamId ? streamId : "otplol_", // TODO: remove this
 		},
 		{ status: 200, headers: corsHeaders(origin) }
 	);
