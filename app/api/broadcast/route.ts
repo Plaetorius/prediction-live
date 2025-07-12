@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
 			try {
 				controller.enqueue(encodedMessage);
 				sentCount++;
+				console.log(`📤 Sent ${event} event to connection ${sentCount}`);
 			} catch (error) {
 				console.error('❌ Error sending to connection:', error);
 			}
@@ -47,7 +48,8 @@ export async function POST(request: NextRequest) {
 		console.log(`✅ Broadcast sent to ${sentCount} connections`);
 		return NextResponse.json({ 
 			message: `Broadcast sent to ${sentCount} connections`,
-			sentCount 
+			sentCount,
+			eventType: event
 		});
 
 	} catch (error) {

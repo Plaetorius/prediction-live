@@ -80,6 +80,7 @@ export default function TestWebSocketPage() {
 		addMessage('🔄 Creating test challenge...');
 
 		try {
+			// First, create the challenge
 			const response = await fetch('/api/challenges', {
 				method: 'POST',
 				headers: {
@@ -100,6 +101,9 @@ export default function TestWebSocketPage() {
 				const result = await response.json();
 				addMessage('✅ Test challenge created successfully');
 				addMessage(`📊 Challenge ID: ${result.challenge?.id || 'unknown'}`);
+				
+				// Manually trigger a broadcast to test the SSE connection
+				await testManualBroadcast(result.challenge, result.options);
 			} else {
 				const error = await response.json();
 				addMessage(`❌ Failed to create challenge: ${error.error}`);
@@ -111,12 +115,102 @@ export default function TestWebSocketPage() {
 		}
 	};
 
+	const testManualBroadcast = async (challenge: { id: string; title: string; event_type: string; stream_id: string }, options: Array<{ id: string; option_key: string; display_name: string; token_name: string }>) => {
+		try {
+			addMessage('📡 Testing manual broadcast...');
+			
+			const broadcastResponse = await fetch('/api/broadcast', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					streamId: streamId,
+					event: 'challenge:new',
+					payload: {
+						id: challenge.id,
+						title: challenge.title,
+						event_type: challenge.event_type,
+						stream_id: challenge.stream_id,
+						options: options.map(opt => ({
+							id: opt.id,
+							option_key: opt.option_key,
+							display_name: opt.display_name,
+							token_name: opt.token_name,
+							odds: 1.0
+						})),
+						timestamp: new Date().toISOString()
+					}
+				}),
+			});
+
+			if (broadcastResponse.ok) {
+				const result = await broadcastResponse.json();
+				addMessage(`✅ Manual broadcast sent: ${result.message}`);
+			} else {
+				addMessage('⚠️ Manual broadcast failed, but challenge was created');
+			}
+		} catch (error) {
+			addMessage(`❌ Error with manual broadcast: ${error}`);
+		}
+	};
+
+	const testSimpleBroadcast = async () => {
+		if (!isConnected) {
+			addMessage('❌ Not connected to stream');
+			return;
+		}
+
+		setIsLoading(true);
+		addMessage('📡 Testing simple broadcast...');
+
+		try {
+			const response = await fetch('/api/broadcast', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					streamId: streamId,
+					event: 'test:event',
+					payload: {
+						message: `Simple test message from client ${Date.now()}`,
+						timestamp: new Date().toISOString()
+					}
+				}),
+			});
+
+			if (response.ok) {
+				const result = await response.json();
+				addMessage(`✅ Simple broadcast sent: ${result.message}`);
+			} else {
+				const error = await response.json();
+				addMessage(`❌ Failed to send simple broadcast: ${error.error}`);
+			}
+		} catch (error) {
+			addMessage(`❌ Error with simple broadcast: ${error}`);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
 	const clearMessages = () => {
 		setMessages([]);
 	};
 
 	useEffect(() => {
+		// Listen for challenge-update events (simulating extension behavior)
+		const handleChallengeUpdate = (event: CustomEvent) => {
+			console.log('🎯 Extension received challenge-update event:', event.detail);
+			addMessage(`🎯 Extension Event: ${event.detail.type}`);
+			addMessage(`📋 Challenge: ${event.detail.challenge.title}`);
+			addMessage(`🎲 Options: ${event.detail.challenge.options.length} options`);
+		};
+
+		document.addEventListener('challenge-update', handleChallengeUpdate as EventListener);
+
 		return () => {
+			document.removeEventListener('challenge-update', handleChallengeUpdate as EventListener);
 			if (eventSource) {
 				eventSource.close();
 			}
@@ -133,7 +227,7 @@ export default function TestWebSocketPage() {
 					<CardContent className="space-y-4">
 						<div className="flex gap-4 items-end">
 							<div className="flex-1">
-								<Label htmlFor="streamId" className="text-[#f5f5f5]">Stream ID</Label>
+								<Label htmlFor="streamId" className="text-[#f5f5f5]">Stream ID from Supabase</Label>
 								<Input
 									id="streamId"
 									value={streamId}
@@ -159,6 +253,13 @@ export default function TestWebSocketPage() {
 								className="bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
 							>
 								{isLoading ? 'Creating...' : 'Test Broadcast'}
+							</Button>
+							<Button
+								onClick={testSimpleBroadcast}
+								disabled={!isConnected || isLoading}
+								className="bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50"
+							>
+								Simple Test
 							</Button>
 							<Button
 								onClick={clearMessages}
