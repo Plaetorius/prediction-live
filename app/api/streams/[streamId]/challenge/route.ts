@@ -14,6 +14,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 	console.log("streamID", streamId);
 	console.log("request", request);
 
+	// TODO if Challenge happening while user connects, send it
+
 	const response =NextResponse.json(
 		{
 			open: true, 
