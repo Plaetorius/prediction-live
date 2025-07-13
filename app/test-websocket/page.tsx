@@ -98,6 +98,25 @@ export default function TestWebSocketPage() {
 
 		setIsLoading(true);
 		addMessage('🔄 Creating test challenge...');
+		
+		// Log the stream ID being used
+		let actualStreamId = streamId;
+		if (!/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i.test(streamId)) {
+			addMessage('🔎 Stream ID is username, will be resolved by API: ' + streamId);
+			
+			try {
+				const lookupRes = await fetch(`/api/streams/lookup?twitchStreamId=${encodeURIComponent(streamId)}`);
+				if (lookupRes.ok) {
+					const lookupData = await lookupRes.json();
+					actualStreamId = lookupData.id;
+					addMessage('✅ Resolved stream ID: ' + actualStreamId);
+				}
+			} catch {
+				addMessage('⚠️ Stream lookup failed, API will handle it');
+			}
+		} else {
+			addMessage('🆔 Using UUID stream ID: ' + streamId);
+		}
 
 		try {
 			// First, create the challenge
@@ -108,7 +127,7 @@ export default function TestWebSocketPage() {
 				},
 				body: JSON.stringify({
 					title: `Test Challenge ${Date.now()}`,
-					streamId: streamId,
+					streamId: streamId, // Send original streamId, API will resolve it
 					eventType: 'test',
 					options: [
 						{ optionKey: 'option_a', displayName: 'Option A', tokenName: 'OPTION_A' },
@@ -121,9 +140,14 @@ export default function TestWebSocketPage() {
 				const result = await response.json();
 				addMessage('✅ Test challenge created successfully');
 				addMessage(`📊 Challenge ID: ${result.challenge?.id || 'unknown'}`);
+				addMessage(`🎯 Challenge Title: ${result.challenge?.title || 'unknown'}`);
+				addMessage(`🔗 Challenge Stream ID: ${result.challenge?.stream_id || 'unknown'}`);
+				addMessage(`📤 Broadcast should have been sent automatically`);
 				
-				// Manually trigger a broadcast to test the SSE connection
-				await testManualBroadcast(result.challenge, result.options);
+				// Wait a moment for the broadcast to process
+				setTimeout(() => {
+					addMessage('⏱️ Challenge broadcast should have been processed by now');
+				}, 1000);
 			} else {
 				const error = await response.json();
 				addMessage(`❌ Failed to create challenge: ${error.error}`);
@@ -135,45 +159,7 @@ export default function TestWebSocketPage() {
 		}
 	};
 
-	const testManualBroadcast = async (challenge: { id: string; title: string; event_type: string; stream_id: string }, options: Array<{ id: string; option_key: string; display_name: string; token_name: string }>) => {
-		try {
-			addMessage('📡 Testing manual broadcast...');
-			
-			const broadcastResponse = await fetch('/api/broadcast', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					streamId: streamId,
-					event: 'challenge:new',
-					payload: {
-						id: challenge.id,
-						title: challenge.title,
-						event_type: challenge.event_type,
-						stream_id: challenge.stream_id,
-						options: options.map(opt => ({
-							id: opt.id,
-							option_key: opt.option_key,
-							display_name: opt.display_name,
-							token_name: opt.token_name,
-							odds: 1.0
-						})),
-						timestamp: new Date().toISOString()
-					}
-				}),
-			});
 
-			if (broadcastResponse.ok) {
-				const result = await broadcastResponse.json();
-				addMessage(`✅ Manual broadcast sent: ${result.message}`);
-			} else {
-				addMessage('⚠️ Manual broadcast failed, but challenge was created');
-			}
-		} catch (error) {
-			addMessage(`❌ Error with manual broadcast: ${error}`);
-		}
-	};
 
 	const testSimpleBroadcast = async () => {
 		if (!isConnected) {
@@ -346,29 +332,50 @@ export default function TestWebSocketPage() {
 	}, [eventSource]);
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-[#0B0518] via-[#1a0f2e] to-[#0B0518] p-8">
-			<div className="mx-auto space-y-6">
+		<div className="min-h-screen bg-gradient-to-br from-[#0B0518] via-[#1a0f2e] to-[#0B0518] p-4 sm:p-6 md:p-8">
+			<div className="mx-auto max-w-7xl space-y-6">
 				<Card className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/20">
 					<CardHeader>
-						<CardTitle className="text-[#f5f5f5]">SSE Test</CardTitle>
+						<CardTitle className="text-[#f5f5f5] text-lg sm:text-xl">SSE Test</CardTitle>
 						<p className="text-[#f5f5f5]/70 text-sm">
 							This page tests the Server-Sent Events (SSE) connection and broadcasting functionality.
 							The extension should be connected to the same stream ID to receive broadcasts.
 						</p>
 					</CardHeader>
-					<CardContent className="space-y-4">
-						<div className="flex gap-4 items-end">
-							<div className="flex-1">
-								<Label htmlFor="streamId" className="text-[#f5f5f5]">Twitch Username or Stream UUID</Label>
+					<CardContent className="space-y-6">
+						{/* Stream ID Input Section */}
+						<div className="space-y-4">
+							<div className="w-full">
+								<Label htmlFor="streamId" className="text-[#f5f5f5] text-sm sm:text-base">
+									Twitch Username or Stream UUID
+								</Label>
 								<Input
 									id="streamId"
 									value={streamId}
 									onChange={(e) => setStreamId(e.target.value)}
-									className="bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5]"
+									className="bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] mt-2"
 									disabled={isConnected}
 									placeholder="e.g., otplol_ or f9a62876-0593-4ddf-9d43-7af4d52f858c"
 								/>
 							</div>
+							
+							{/* Connection Status */}
+							<div className="flex items-center gap-3">
+								<div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+								<span className="text-[#f5f5f5] text-sm sm:text-base">
+									{isConnected ? 'Connected' : 'Disconnected'}
+								</span>
+								{isLoading && (
+									<div className="flex items-center gap-2">
+										<div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+										<span className="text-[#f5f5f5]/70 text-sm">Loading...</span>
+									</div>
+								)}
+							</div>
+						</div>
+
+						{/* Primary Action Buttons */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<Button
 								onClick={isConnected ? disconnect : connectToStream}
 								disabled={isLoading}
@@ -376,21 +383,25 @@ export default function TestWebSocketPage() {
 									isConnected 
 										? 'bg-red-500 hover:bg-red-600' 
 										: 'bg-green-500 hover:bg-green-600'
-								} text-white disabled:opacity-50`}
+								} text-white disabled:opacity-50 h-12 font-medium`}
 							>
 								{isLoading ? 'Connecting...' : isConnected ? 'Disconnect' : 'Connect'}
 							</Button>
 							<Button
 								onClick={testBroadcast}
 								disabled={!isConnected || isLoading}
-								className="bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50"
+								className="bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-50 h-12 font-medium"
 							>
 								{isLoading ? 'Creating...' : 'Test Broadcast'}
 							</Button>
+						</div>
+
+						{/* Test Buttons Grid */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 							<Button
 								onClick={testSimpleBroadcast}
 								disabled={!isConnected || isLoading}
-								className="bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50"
+								className="bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50 h-10 text-sm"
 							>
 								Simple Test
 							</Button>
@@ -431,16 +442,16 @@ export default function TestWebSocketPage() {
 									}
 								}}
 								disabled={!isConnected || isLoading}
-								className="bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50"
+								className="bg-orange-500 hover:bg-orange-600 text-white disabled:opacity-50 h-10 text-sm"
 							>
 								Original Test
 							</Button>
 							<Button
 								onClick={testChallengeDetails}
 								disabled={!isConnected || isLoading}
-								className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50"
+								className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50 h-10 text-sm"
 							>
-								Test Challenge Details
+								Challenge Details
 							</Button>
 							<Button
 								onClick={async () => {
@@ -500,10 +511,14 @@ export default function TestWebSocketPage() {
 									}
 								}}
 								disabled={!isConnected || isLoading}
-								className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50"
+								className="bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-50 h-10 text-sm"
 							>
-								Test Challenge Event
+								Challenge Event
 							</Button>
+						</div>
+
+						{/* Utility Buttons */}
+						<div className="grid grid-cols-2 gap-3">
 							<Button
 								onClick={() => {
 									addMessage('🔍 Checking active connections...');
@@ -517,45 +532,34 @@ export default function TestWebSocketPage() {
 										});
 								}}
 								variant="outline"
-								className="text-[#f5f5f5] border-[#f5f5f5]/20 hover:bg-[#f5f5f5]/10"
+								className="text-[#f5f5f5] border-[#f5f5f5]/20 hover:bg-[#f5f5f5]/10 h-10"
 							>
 								Debug
 							</Button>
 							<Button
 								onClick={clearMessages}
 								variant="outline"
-								className="text-[#f5f5f5] border-[#f5f5f5]/20 hover:bg-[#f5f5f5]/10"
+								className="text-[#f5f5f5] border-[#f5f5f5]/20 hover:bg-[#f5f5f5]/10 h-10"
 							>
 								Clear
 							</Button>
-						</div>
-						
-						<div className="flex items-center gap-2">
-							<div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-							<span className="text-[#f5f5f5]">
-								{isConnected ? 'Connected' : 'Disconnected'}
-							</span>
-							{isLoading && (
-								<div className="flex items-center gap-2">
-									<div className="w-4 h-4 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-									<span className="text-[#f5f5f5]/70">Loading...</span>
-								</div>
-							)}
 						</div>
 					</CardContent>
 				</Card>
 
 				<Card className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/20">
 					<CardHeader>
-						<CardTitle className="text-[#f5f5f5]">Messages ({messages.length})</CardTitle>
+						<CardTitle className="text-[#f5f5f5] text-lg sm:text-xl">
+							Messages ({messages.length})
+						</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<div className="h-96 overflow-y-auto bg-black/20 rounded-lg p-4 font-mono text-sm">
+						<div className="h-64 sm:h-80 md:h-96 overflow-y-auto bg-black/20 rounded-lg p-3 sm:p-4 font-mono text-xs sm:text-sm">
 							{messages.length === 0 ? (
 								<div className="text-[#f5f5f5]/50">No messages yet...</div>
 							) : (
 								messages.map((message, index) => (
-									<div key={index} className="text-[#f5f5f5] mb-2 break-words">
+									<div key={index} className="text-[#f5f5f5] mb-2 break-words leading-relaxed">
 										{message}
 									</div>
 								))

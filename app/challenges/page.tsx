@@ -71,7 +71,6 @@ export default function ChallengesPage() {
 				toast.error(`Failed to create challenge: ${result.error}`);
 			} else {
 				toast.success("Challenge created successfully!");
-		form.reset();
 	}
 		} catch (error) {
 			toast.error("An unexpected error occurred");
@@ -118,31 +117,31 @@ export default function ChallengesPage() {
 			</div>
 
 			<main className="relative z-10 min-h-screen">
-				<div className="container mx-auto py-8 px-4">
+				<div className="container mx-auto py-6 sm:py-8 px-4">
 					<div className="max-w-7xl mx-auto">
 						{/* Hero Section */}
-						<div className="text-center mb-12 transform-gpu animate-fade-in-up">
-							<div className="relative mb-6">
-								<h1 className="text-6xl md:text-8xl font-black text-[#f5f5f5] leading-none transform-gpu hover:scale-105 transition-transform duration-700">
+						<div className="text-center mb-8 sm:mb-12 transform-gpu animate-fade-in-up">
+							<div className="relative mb-4 sm:mb-6">
+								<h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-[#f5f5f5] leading-none transform-gpu hover:scale-105 transition-transform duration-700">
 									PREDICTION
 									<span className="block text-[#FF0052] bg-gradient-to-r from-[#FF0052] via-[#ff4d7d] to-[#FF0052] bg-clip-text text-transparent animate-pulse">
 										CHALLENGES
 									</span>
 								</h1>
 								{/* Glow effect */}
-								<div className="absolute inset-0 text-6xl md:text-8xl font-black text-[#FF0052]/20 blur-xl -z-10 animate-pulse">
+								<div className="absolute inset-0 text-4xl sm:text-6xl md:text-8xl font-black text-[#FF0052]/20 blur-xl -z-10 animate-pulse">
 									PREDICTION CHALLENGES
 								</div>
 							</div>
 							
-							<p className="text-xl md:text-2xl text-[#f5f5f5]/80 max-w-3xl mx-auto leading-relaxed font-light">
+							<p className="text-lg sm:text-xl md:text-2xl text-[#f5f5f5]/80 max-w-3xl mx-auto leading-relaxed font-light">
 								Create and manage <span className="text-[#FF0052] font-bold">real-time prediction challenges</span>. 
 								From epic battles to strategic decisions, let users predict outcomes and earn rewards.
 							</p>
 						</div>
 
 						{/* Tabs with futuristic styling */}
-						<Tabs defaultValue="list" className="space-y-8">
+						<Tabs defaultValue="list" className="space-y-6 sm:space-y-8">
 							<TabsList
 								className="flex w-full max-w-md mx-auto rounded-full bg-[#1a0f2e] p-1 shadow-lg sticky top-4 z-20"
 								role="tablist"
@@ -150,7 +149,7 @@ export default function ChallengesPage() {
 								<TabsTrigger
 									value="list"
 									className={`
-										flex-1 flex items-center justify-center gap-2 py-3 rounded-full transition-all
+										flex-1 flex items-center justify-center gap-2 py-3 rounded-full transition-all text-sm sm:text-base
 										data-[state=active]:bg-[#FF0052] data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow
 										data-[state=inactive]:bg-[#1a0f2e] data-[state=inactive]:text-[#f5f5f5]/90 hover:bg-[#2a183a]/40
 										focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0052]
@@ -159,13 +158,14 @@ export default function ChallengesPage() {
 									tabIndex={0}
 									title="View all challenges"
 								>
-									<List className="h-5 w-5" />
-									All Challenges
+									<List className="h-4 w-4 sm:h-5 sm:w-5" />
+									<span className="hidden sm:inline">All Challenges</span>
+									<span className="sm:hidden">All</span>
 								</TabsTrigger>
 								<TabsTrigger
 									value="create"
 									className={`
-										flex-1 flex items-center justify-center gap-2 py-3 rounded-full transition-all
+										flex-1 flex items-center justify-center gap-2 py-3 rounded-full transition-all text-sm sm:text-base
 										data-[state=active]:bg-[#FF0052] data-[state=active]:text-white data-[state=active]:font-bold data-[state=active]:shadow
 										data-[state=inactive]:bg-[#1a0f2e] data-[state=inactive]:text-[#f5f5f5]/90 hover:bg-[#FF0052]/20
 										focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF0052]
@@ -174,43 +174,44 @@ export default function ChallengesPage() {
 									tabIndex={0}
 									title="Create a new challenge"
 								>
-									<PlusCircle className="h-5 w-5" />
-									Create Challenge
+									<PlusCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+									<span className="hidden sm:inline">Create Challenge</span>
+									<span className="sm:hidden">Create</span>
 								</TabsTrigger>
 							</TabsList>
 
 							<TabsContent value="list" className="space-y-6">
-								<div className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-3xl p-8">
+								<div className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-3xl p-4 sm:p-6 lg:p-8">
 									<ChallengeList />
 								</div>
 							</TabsContent>
 
 							<TabsContent value="create">
 								<Card className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/20 rounded-3xl overflow-hidden">
-									<CardHeader className="border-b border-[#f5f5f5]/10">
+									<CardHeader className="border-b border-[#f5f5f5]/10 p-4 sm:p-6">
 										<div className="flex items-center gap-3">
-											<div className="p-3 rounded-xl">
-												<Trophy className="h-6 w-6 text-[#FF0052]" />
+											<div className="p-2 sm:p-3 rounded-xl">
+												<Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-[#FF0052]" />
 											</div>
 											<div>
-												<CardTitle className="text-2xl text-[#f5f5f5]">Create New Challenge</CardTitle>
-												<CardDescription className="text-[#f5f5f5]/70">
+												<CardTitle className="text-xl sm:text-2xl text-[#f5f5f5]">Create New Challenge</CardTitle>
+												<CardDescription className="text-[#f5f5f5]/70 text-sm sm:text-base">
 													Design an exciting prediction challenge with multiple outcomes
 												</CardDescription>
 											</div>
 										</div>
 									</CardHeader>
-									<CardContent className="p-8">
-										<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+									<CardContent className="p-4 sm:p-6 lg:p-8">
+										<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
 											{/* Basic Challenge Information */}
-											<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+											<div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-3 sm:gap-6">
 												<div className="space-y-3">
-													<Label htmlFor="title" className="text-[#f5f5f5] font-medium">Challenge Title</Label>
+													<Label htmlFor="title" className="text-[#f5f5f5] font-medium text-sm sm:text-base">Challenge Title</Label>
 													<Input
 														id="title"
 														{...form.register("title")}
 														placeholder="Enter an exciting title"
-														className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20"
+														className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20 h-11 sm:h-10"
 													/>
 													{form.formState.errors.title && (
 														<p className="text-sm text-red-400">
@@ -220,7 +221,7 @@ export default function ChallengesPage() {
 												</div>
 
 												<div className="space-y-3">
-													<Label htmlFor="streamId" className="text-[#f5f5f5] font-medium">Select Stream</Label>
+													<Label htmlFor="streamId" className="text-[#f5f5f5] font-medium text-sm sm:text-base">Select Stream</Label>
 													<StreamSelector
 														value={form.watch("streamId")}
 														onValueChange={(value) => form.setValue("streamId", value)}
@@ -234,12 +235,12 @@ export default function ChallengesPage() {
 												</div>
 
 												<div className="space-y-3">
-													<Label htmlFor="eventType" className="text-[#f5f5f5] font-medium">Event Type</Label>
+													<Label htmlFor="eventType" className="text-[#f5f5f5] font-medium text-sm sm:text-base">Event Type</Label>
 													<Input
 														id="eventType"
 														{...form.register("eventType")}
 														placeholder="e.g., match, tournament"
-														className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20"
+														className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20 h-11 sm:h-10"
 													/>
 													{form.formState.errors.eventType && (
 														<p className="text-sm text-red-400">
@@ -252,15 +253,15 @@ export default function ChallengesPage() {
 											<Separator className="bg-[#f5f5f5]/20" />
 
 											{/* Challenge Options */}
-											<div className="space-y-6">
-												<div className="flex items-center justify-between">
+											<div className="space-y-4 sm:space-y-6">
+												<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 													<div className="flex items-center gap-3">
 														<div className="p-2 bg-[#FF0052]/20 rounded-lg">
-															<Target className="h-5 w-5 text-[#FF0052]" />
+															<Target className="h-4 w-4 sm:h-5 sm:w-5 text-[#FF0052]" />
 														</div>
 														<div>
-															<h3 className="text-xl font-semibold text-[#f5f5f5]">Challenge Options</h3>
-															<p className="text-sm text-[#f5f5f5]/70">
+															<h3 className="text-lg sm:text-xl font-semibold text-[#f5f5f5]">Challenge Options</h3>
+															<p className="text-xs sm:text-sm text-[#f5f5f5]/70">
 																Define the available outcomes for this challenge
 															</p>
 														</div>
@@ -270,7 +271,7 @@ export default function ChallengesPage() {
 														variant="outline"
 														size="sm"
 														onClick={addOption}
-														className="flex bg-transparent items-center gap-2 border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#FF0052] hover:border-[#FF0052] hover:text-white transition-all duration-300"
+														className="flex bg-transparent items-center gap-2 border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#FF0052] hover:border-[#FF0052] hover:text-white transition-all duration-300 h-10 sm:h-9"
 													>
 														<Plus className="h-4 w-4" />
 														Add Option
@@ -279,13 +280,13 @@ export default function ChallengesPage() {
 
 												<div className="space-y-4">
 													{fields.map((field, index) => (
-														<Card key={field.id} className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl p-6">
+														<Card key={field.id} className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl p-4 sm:p-6">
 															<div className="flex items-center justify-between mb-4">
 																<div className="flex items-center gap-3">
 																	<div className="p-2 bg-[#FF0052]/20 rounded-lg">
-																		<Zap className="h-4 w-4 text-[#FF0052]" />
+																		<Zap className="h-3 w-3 sm:h-4 sm:w-4 text-[#FF0052]" />
 																	</div>
-																	<h4 className="font-medium text-[#f5f5f5]">Option {index + 1}</h4>
+																	<h4 className="font-medium text-[#f5f5f5] text-sm sm:text-base">Option {index + 1}</h4>
 																</div>
 																{fields.length > 2 && (
 																	<Button
@@ -293,60 +294,60 @@ export default function ChallengesPage() {
 																		variant="ghost"
 																		size="sm"
 																		onClick={() => removeOption(index)}
-																		className="text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all duration-300"
+																		className="text-red-400 hover:text-red-300 hover:bg-red-400/10 transition-all duration-300 h-8 w-8 p-0"
 																	>
 																		<Trash2 className="h-4 w-4" />
 																	</Button>
 																)}
 															</div>
 
-															<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+															<div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-3 sm:gap-4">
 																<div className="space-y-2">
-																	<Label htmlFor={`options.${index}.optionKey`} className="text-[#f5f5f5] text-sm">
+																	<Label htmlFor={`options.${index}.optionKey`} className="text-[#f5f5f5] text-xs sm:text-sm">
 																		Option Key
 																	</Label>
 																	<Input
 																		id={`options.${index}.optionKey`}
 																		{...form.register(`options.${index}.optionKey`)}
 																		placeholder="e.g., team_a, winner"
-																		className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20"
+																		className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20 h-10 sm:h-9 text-sm"
 																	/>
 																	{form.formState.errors.options?.[index]?.optionKey && (
-																		<p className="text-sm text-red-400">
+																		<p className="text-xs text-red-400">
 																			{form.formState.errors.options[index]?.optionKey?.message}
 																		</p>
 																	)}
 																</div>
 
 																<div className="space-y-2">
-																	<Label htmlFor={`options.${index}.displayName`} className="text-[#f5f5f5] text-sm">
+																	<Label htmlFor={`options.${index}.displayName`} className="text-[#f5f5f5] text-xs sm:text-sm">
 																		Display Name
 																	</Label>
 																	<Input
 																		id={`options.${index}.displayName`}
 																		{...form.register(`options.${index}.displayName`)}
 																		placeholder="e.g., Team A, Winner"
-																		className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20"
+																		className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20 h-10 sm:h-9 text-sm"
 																	/>
 																	{form.formState.errors.options?.[index]?.displayName && (
-																		<p className="text-sm text-red-400">
+																		<p className="text-xs text-red-400">
 																			{form.formState.errors.options[index]?.displayName?.message}
 																		</p>
 																	)}
 																</div>
 
 																<div className="space-y-2">
-																	<Label htmlFor={`options.${index}.tokenName`} className="text-[#f5f5f5] text-sm">
+																	<Label htmlFor={`options.${index}.tokenName`} className="text-[#f5f5f5] text-xs sm:text-sm">
 																		Token Name
 																	</Label>
 																	<Input
 																		id={`options.${index}.tokenName`}
 																		{...form.register(`options.${index}.tokenName`)}
 																		placeholder="e.g., TEAM_A, WINNER"
-																		className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20"
+																		className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20 h-10 sm:h-9 text-sm"
 																	/>
 																	{form.formState.errors.options?.[index]?.tokenName && (
-																		<p className="text-sm text-red-400">
+																		<p className="text-xs text-red-400">
 																			{form.formState.errors.options[index]?.tokenName?.message}
 																		</p>
 																	)}
@@ -366,25 +367,25 @@ export default function ChallengesPage() {
 											<Separator className="bg-[#f5f5f5]/20" />
 
 											{/* Submit Button */}
-											<div className="flex justify-end">
+											<div className="flex justify-center sm:justify-end">
 												<Button
 													type="submit"
 													disabled={isSubmitting}
-													className="min-w-[200px] bg-gradient-to-r from-[#FF0052] to-[#ff4d7d] hover:from-[#ff4d7d] hover:to-[#FF0052] text-white font-semibold py-3 px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="w-full sm:w-auto sm:min-w-[200px] bg-gradient-to-r from-[#FF0052] to-[#ff4d7d] hover:from-[#ff4d7d] hover:to-[#FF0052] text-white font-semibold py-3 px-6 sm:px-8 rounded-2xl transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed h-12 sm:h-11"
 												>
 													{isSubmitting ? (
-														<div className="flex items-center gap-2">
+														<div className="flex items-center justify-center gap-2">
 															<div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
 															Creating...
 														</div>
 													) : (
-														<div className="flex items-center gap-2">
-															<Trophy className="h-5 w-5" />
+														<div className="flex items-center justify-center gap-2">
+															<Trophy className="h-4 w-4 sm:h-5 sm:w-5" />
 															Create Challenge
 														</div>
 													)}
 												</Button>
-					</div>
+											</div>
 										</form>
 									</CardContent>
 								</Card>
