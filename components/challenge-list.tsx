@@ -47,13 +47,31 @@ export default function ChallengeList() {
 		const fetchChallenges = async () => {
 			try {
 				setLoading(true);
+				console.log('🔍 Frontend: Fetching challenges from /api/challenges...');
+				
 				const response = await fetch('/api/challenges');
+				console.log('📡 Frontend: Response status:', response.status, response.statusText);
+				console.log('📡 Frontend: Response headers:', Object.fromEntries(response.headers.entries()));
+				
 				if (!response.ok) {
-					throw new Error('Failed to fetch challenges');
+					const errorText = await response.text();
+					console.error('❌ Frontend: API error response:', errorText);
+					throw new Error(`Failed to fetch challenges: ${response.status} ${response.statusText}`);
 				}
+				
 				const data = await response.json();
-				setChallenges(data.challenges || []);
+				console.log('📊 Frontend: Fetched challenges data:', data);
+				console.log('📊 Frontend: Data type:', typeof data);
+				console.log('📊 Frontend: Is array:', Array.isArray(data));
+				console.log('📊 Frontend: Data length:', Array.isArray(data) ? data.length : 'N/A');
+				
+				if (Array.isArray(data) && data.length > 0) {
+					console.log('📊 Frontend: First challenge sample:', data[0]);
+				}
+				
+				setChallenges(data || []);
 			} catch (err) {
+				console.error('❌ Frontend: Error fetching challenges:', err);
 				setError(err instanceof Error ? err.message : 'Unknown error');
 			} finally {
 				setLoading(false);
@@ -62,6 +80,54 @@ export default function ChallengeList() {
 
 		fetchChallenges();
 	}, []);
+
+	const debugRefresh = async () => {
+		console.log('🔄 Manual refresh triggered');
+		setError(null);
+		const fetchChallenges = async () => {
+			try {
+				setLoading(true);
+				console.log('🔍 Debug: Fetching challenges from /api/challenges...');
+				
+				const response = await fetch('/api/challenges', {
+					method: 'GET',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					cache: 'no-cache'
+				});
+				
+				console.log('📡 Debug: Response status:', response.status, response.statusText);
+				console.log('📡 Debug: Response headers:', Object.fromEntries(response.headers.entries()));
+				
+				if (!response.ok) {
+					const errorText = await response.text();
+					console.error('❌ Debug: API error response:', errorText);
+					throw new Error(`Failed to fetch challenges: ${response.status} ${response.statusText}`);
+				}
+				
+				const data = await response.json();
+				console.log('📊 Debug: Raw response data:', data);
+				console.log('📊 Debug: Data structure analysis:', {
+					type: typeof data,
+					isArray: Array.isArray(data),
+					length: Array.isArray(data) ? data.length : 'N/A',
+					keys: typeof data === 'object' ? Object.keys(data) : 'N/A'
+				});
+				
+				setChallenges(data || []);
+				toast.success(`Refreshed! Found ${Array.isArray(data) ? data.length : 0} challenges`);
+			} catch (err) {
+				console.error('❌ Debug: Error fetching challenges:', err);
+				setError(err instanceof Error ? err.message : 'Unknown error');
+				toast.error(`Debug refresh failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		await fetchChallenges();
+	};
 
 	const handlePickWinner = (challenge: Challenge) => {
 		setSelectedChallenge(challenge);
@@ -242,6 +308,24 @@ export default function ChallengeList() {
 
 	return (
 		<>
+			{/* Debug Controls */}
+			<div className="mb-6 p-4 bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl">
+				<div className="flex items-center justify-between gap-4">
+					<div className="text-sm text-[#f5f5f5]/70">
+						Debug: Found {challenges.length} challenges | Status: {loading ? 'Loading...' : error ? `Error: ${error}` : 'Ready'}
+					</div>
+					<Button
+						onClick={debugRefresh}
+						variant="outline"
+						size="sm"
+						disabled={loading}
+						className="bg-transparent border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#FF0052] hover:border-[#FF0052] hover:text-white"
+					>
+						🔄 Debug Refresh
+					</Button>
+				</div>
+			</div>
+			
 			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
 				{challenges.map((challenge) => {
 					const winnerOption = challenge.winner_option_id 

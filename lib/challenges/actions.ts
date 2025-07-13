@@ -79,6 +79,8 @@ export async function createChallenge(data: CreateChallengeData) {
 export async function getChallenges() {
 	const supabase = await createClient();
 
+	console.log('🔍 Fetching challenges from database...');
+
 	const { data, error } = await supabase
 		.from("challenges")
 		.select(`
@@ -88,22 +90,38 @@ export async function getChallenges() {
 		.order("created_at", { ascending: false });
 
 	if (error) {
-		console.error("Error fetching challenges:", error);
+		console.error("❌ Error fetching challenges:", error);
 		return { error: error.message };
 	}
 
+	console.log('📊 Raw challenges data from DB:', data);
+	console.log('📈 Number of challenges found:', data?.length || 0);
+
+	if (!data || data.length === 0) {
+		console.log('⚠️ No challenges found in database');
+		return { data: [] };
+	}
+
 	// Clean challenge_options data to ensure consistent structure
-	const cleanedData = data?.map(challenge => ({
-		...challenge,
-		challenge_options: challenge.challenge_options?.map((option: ChallengeOption) => ({
-			id: option.id,
-			challenge_id: option.challenge_id,
-			option_key: option.option_key,
-			display_name: option.display_name,
-			token_name: option.token_name,
-			created_at: option.created_at
-		})) || []
-	}));
+	const cleanedData = data?.map(challenge => {
+		console.log(`🔧 Processing challenge ${challenge.id}:`, challenge.title);
+		console.log(`📋 Challenge options for ${challenge.id}:`, challenge.challenge_options?.length || 0);
+		
+		return {
+			...challenge,
+			challenge_options: challenge.challenge_options?.map((option: ChallengeOption) => ({
+				id: option.id,
+				challenge_id: option.challenge_id,
+				option_key: option.option_key,
+				display_name: option.display_name,
+				token_name: option.token_name,
+				created_at: option.created_at
+			})) || []
+		};
+	});
+
+	console.log('✅ Cleaned challenges data:', cleanedData);
+	console.log('📊 Final number of challenges:', cleanedData?.length || 0);
 
 	return { data: cleanedData };
 }

@@ -33,18 +33,28 @@ export async function GET(request: NextRequest) {
   const origin = request.headers.get("origin") || undefined;
   
   try {
+    console.log('🔍 API: Starting to fetch challenges...');
     const result = await getChallenges();
 
+    console.log('📊 API: getChallenges result:', {
+      hasError: !!result.error,
+      hasData: !!result.data,
+      dataType: typeof result.data,
+      dataLength: Array.isArray(result.data) ? result.data.length : 'not an array'
+    });
+
     if (result.error) {
+      console.error('❌ API: Error from getChallenges:', result.error);
       return NextResponse.json(
         { error: result.error },
         { status: 400, headers: corsHeaders(origin) }
       );
     }
 
+    console.log('✅ API: Returning challenges data:', result.data);
     return NextResponse.json(result.data, { headers: corsHeaders(origin) });
   } catch (error) {
-    console.error('Error fetching challenges:', error);
+    console.error('❌ API: Unexpected error fetching challenges:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500, headers: corsHeaders(origin) }
