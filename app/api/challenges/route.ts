@@ -21,6 +21,7 @@ interface Challenge {
   created_at: string;
   updated_at?: string;
   started_at?: string;
+  closing_at?: string;
 }
 
 export async function OPTIONS(request: NextRequest) {
@@ -119,6 +120,7 @@ export async function POST(request: NextRequest) {
         created_at: challenge.created_at,
         updated_at: challenge.updated_at,
         started_at: challenge.started_at || new Date().toISOString(),
+        closing_at: challenge.closing_at,
         
         // Complete options information
         options: options.map((opt: ChallengeOption) => ({

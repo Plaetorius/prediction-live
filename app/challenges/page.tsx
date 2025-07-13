@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Trash2, Plus, List, PlusCircle, Trophy, Target, Zap } from 'lucide-react'
+import { Trash2, Plus, List, PlusCircle, Trophy, Target, Zap, RotateCcw } from 'lucide-react'
 import React, { useState } from 'react'
 import { useForm, useFieldArray } from 'react-hook-form'
 import { z } from 'zod'
@@ -27,6 +27,7 @@ const createChallengeSchema = z.object({
 		message: "Please select a valid stream"
 	}),
 	eventType: z.string().min(1, "Event Type is required"),
+	duration: z.number().min(15, "Duration must be at least 15 seconds").max(900, "Duration cannot exceed 15 minutes"),
 	options: z.array(challengeOptionSchema).min(2, "At least 2 options are required"),
 });
 
@@ -41,6 +42,7 @@ export default function ChallengesPage() {
 			title: "",
 			streamId: "select",
 			eventType: "",
+			duration: 300, // Default to 300 seconds (5 minutes)
 			options: [
 				{ optionKey: "", displayName: "", tokenName: "" },
 				{ optionKey: "", displayName: "", tokenName: "" }
@@ -88,6 +90,19 @@ export default function ChallengesPage() {
 		if (fields.length > 2) {
 			remove(index);
 		}
+	};
+
+	const resetForm = () => {
+		form.reset({
+			title: "",
+			streamId: "select",
+			eventType: "",
+			duration: 300, // Default to 300 seconds (5 minutes)
+			options: [
+				{ optionKey: "", displayName: "", tokenName: "" },
+				{ optionKey: "", displayName: "", tokenName: "" }
+			],
+		});
 	};
 
 	return (
@@ -204,7 +219,7 @@ export default function ChallengesPage() {
 									<CardContent className="p-4 sm:p-6 lg:p-8">
 										<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 sm:space-y-8">
 											{/* Basic Challenge Information */}
-											<div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-3 sm:gap-6">
+											<div className="space-y-4 sm:space-y-0 sm:grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4 sm:gap-6">
 												<div className="space-y-3">
 													<Label htmlFor="title" className="text-[#f5f5f5] font-medium text-sm sm:text-base">Challenge Title</Label>
 													<Input
@@ -245,6 +260,24 @@ export default function ChallengesPage() {
 													{form.formState.errors.eventType && (
 														<p className="text-sm text-red-400">
 															{form.formState.errors.eventType.message}
+														</p>
+													)}
+												</div>
+
+												<div className="space-y-3">
+													<Label htmlFor="duration" className="text-[#f5f5f5] font-medium text-sm sm:text-base">Duration (seconds)</Label>
+													<Input
+														id="duration"
+														type="number"
+														min="15"
+														max="900"
+														{...form.register("duration", { valueAsNumber: true })}
+														placeholder="300"
+														className="backdrop-blur-xl bg-[#f5f5f5]/10 border-[#f5f5f5]/20 text-[#f5f5f5] placeholder-[#f5f5f5]/50 focus:border-[#FF0052] focus:ring-[#FF0052]/20 h-11 sm:h-10"
+													/>
+													{form.formState.errors.duration && (
+														<p className="text-sm text-red-400">
+															{form.formState.errors.duration.message}
 														</p>
 													)}
 												</div>
@@ -366,8 +399,19 @@ export default function ChallengesPage() {
 
 											<Separator className="bg-[#f5f5f5]/20" />
 
-											{/* Submit Button */}
-											<div className="flex justify-center sm:justify-end">
+											{/* Action Buttons */}
+											<div className="flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-4">
+												<Button
+													type="button"
+													variant="outline"
+													onClick={resetForm}
+													className="w-full sm:w-auto sm:min-w-[150px] bg-transparent border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#f5f5f5]/10 hover:border-[#f5f5f5]/40 font-medium py-3 px-6 sm:px-8 rounded-2xl transition-all duration-300 h-12 sm:h-11"
+												>
+													<div className="flex items-center justify-center gap-2">
+														<RotateCcw className="h-4 w-4 sm:h-5 sm:w-5" />
+														Reset Form
+													</div>
+												</Button>
 												<Button
 													type="submit"
 													disabled={isSubmitting}

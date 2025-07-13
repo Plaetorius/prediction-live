@@ -27,6 +27,7 @@ export interface Challenge {
   startedAt: string;
   createdAt?: string;
   updatedAt?: string;
+  closingAt?: string;
   options: ChallengeOption[];
   metadata?: {
     total_options: number;

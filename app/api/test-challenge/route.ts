@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
       state: 'open',
       created_at: new Date().toISOString(),
       started_at: new Date().toISOString(),
+      closing_at: new Date(Date.now() + 300 * 1000).toISOString(), // 300 seconds (5 minutes) from now
       options: [
         {
           id: 'option-1',

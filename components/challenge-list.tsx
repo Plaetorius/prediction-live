@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Users, Trophy } from 'lucide-react';
+import { Eye, Users, Trophy, Clock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ChallengeOption {
@@ -20,6 +20,7 @@ interface Challenge {
 	state: string;
 	started_at: string;
 	created_at: string;
+	closing_at?: string;
 	challenge_options: ChallengeOption[];
 }
 
@@ -108,6 +109,13 @@ export default function ChallengeList() {
 								<Trophy className="h-4 w-4 text-[#FF0052]" />
 								<span>{challenge.challenge_options.length} options</span>
 							</div>
+							
+							{challenge.closing_at && (
+								<div className="flex items-center gap-2 text-sm text-[#f5f5f5]/70">
+									<Clock className="h-4 w-4 text-[#FF0052]" />
+									<span>Closes: {new Date(challenge.closing_at).toLocaleDateString()} at {new Date(challenge.closing_at).toLocaleTimeString()}</span>
+								</div>
+							)}
 							
 							<div className="space-y-2">
 								{challenge.challenge_options.slice(0, 3).map((option) => (

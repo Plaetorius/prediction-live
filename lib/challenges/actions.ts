@@ -4,6 +4,7 @@ export interface CreateChallengeData {
 	streamId: string;
 	eventType: string;
 	title: string;
+	duration: number; // Duration in seconds
 	options: {
 		optionKey: string;
 		displayName: string;
@@ -23,6 +24,10 @@ interface ChallengeOption {
 export async function createChallenge(data: CreateChallengeData) {
 	const supabase = await createClient();
 
+	// Compute closing_at based on duration (in seconds)
+	const now = new Date();
+	const closingAt = new Date(now.getTime() + data.duration * 1000);
+
 	// First, create the challenge
 	const { data: challenge, error: challengeError } = await supabase
 		.from("challenges")
@@ -30,6 +35,7 @@ export async function createChallenge(data: CreateChallengeData) {
 			stream_id: data.streamId,
 			event_type: data.eventType,
 			title: data.title,
+			closing_at: closingAt.toISOString(),
 		})
 		.select()
 		.single();
