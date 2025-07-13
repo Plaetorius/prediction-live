@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Trophy, Clock, Crown } from 'lucide-react';
+import { Eye, Trophy, Clock, Crown, Sparkles, CheckCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import {
 	Dialog,
@@ -41,19 +41,20 @@ export default function ChallengeList() {
 	const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
 	const [isWinnerModalOpen, setIsWinnerModalOpen] = useState(false);
 	const [isSelectingWinner, setIsSelectingWinner] = useState(false);
+	const [celebratingChallengeId, setCelebratingChallengeId] = useState<string | null>(null);
 
 	useEffect(() => {
 		const fetchChallenges = async () => {
 			try {
+				setLoading(true);
 				const response = await fetch('/api/challenges');
 				if (!response.ok) {
 					throw new Error('Failed to fetch challenges');
 				}
 				const data = await response.json();
-				console.log('Challenges data:', data); // Debug log
-				setChallenges(data);
+				setChallenges(data.challenges || []);
 			} catch (err) {
-				setError(err instanceof Error ? err.message : 'An error occurred');
+				setError(err instanceof Error ? err.message : 'Unknown error');
 			} finally {
 				setLoading(false);
 			}
@@ -86,33 +87,126 @@ export default function ChallengeList() {
 			const result = await response.json();
 
 			if (!response.ok) {
-				toast.error(`Failed to select winner: ${result.error}`);
+				toast.error(`Failed to select winner: ${result.error}`, {
+					description: "Please try again or check the console for more details",
+					duration: 4000,
+				});
 			} else {
 				const winnerOption = selectedChallenge.challenge_options.find(opt => opt.id === optionId);
-				toast.success(`Winner selected: ${winnerOption?.display_name || 'Unknown'}!`);
 				
-				// Update the challenge state locally
+				// Show success toast with celebration
+				toast.success(`🎉 Winner Selected!`, {
+					description: `${winnerOption?.display_name || 'Unknown'} is the winner! 🏆`,
+					duration: 5000,
+					action: {
+						label: "View Details",
+						onClick: () => console.log("Winner details:", winnerOption)
+					}
+				});
+				
+				// Trigger celebration animation
+				setCelebratingChallengeId(selectedChallenge.id);
+				setTimeout(() => setCelebratingChallengeId(null), 3000);
+				
+				// Update the challenge state locally with celebration
 				setChallenges(prev => prev.map(challenge => 
 					challenge.id === selectedChallenge.id 
 						? { ...challenge, state: 'resolved', winner_option_id: optionId }
 						: challenge
 				));
 				
+				// Create confetti effect
+				createConfettiEffect();
+				
+				// Play success sound
+				playSuccessSound();
+				
 				setIsWinnerModalOpen(false);
 				setSelectedChallenge(null);
+				
+				console.log('🏆 Winner selected successfully:', {
+					challengeId: selectedChallenge.id,
+					challengeTitle: selectedChallenge.title,
+					winnerId: optionId,
+					winnerName: winnerOption?.display_name,
+					timestamp: new Date().toISOString()
+				});
 			}
 		} catch (error) {
-			toast.error("An unexpected error occurred");
+			toast.error("An unexpected error occurred", {
+				description: "Please check your connection and try again",
+				duration: 4000,
+			});
 			console.error('Winner selection error:', error);
 		} finally {
 			setIsSelectingWinner(false);
 		}
 	};
 
+	const createConfettiEffect = () => {
+		// Create multiple confetti elements
+		for (let i = 0; i < 50; i++) {
+			const confetti = document.createElement('div');
+			confetti.className = 'confetti-piece';
+			confetti.style.cssText = `
+				position: fixed;
+				width: 10px;
+				height: 10px;
+				background: ${['#FF0052', '#FFD700', '#00FF52', '#0052FF', '#FF5200'][Math.floor(Math.random() * 5)]};
+				left: ${Math.random() * 100}vw;
+				top: -10px;
+				z-index: 10000;
+				pointer-events: none;
+				animation: confetti-fall ${2 + Math.random() * 3}s linear forwards;
+				transform: rotate(${Math.random() * 360}deg);
+			`;
+			document.body.appendChild(confetti);
+			
+			setTimeout(() => confetti.remove(), 5000);
+		}
+	};
+
+	const playSuccessSound = () => {
+		// Create a success sound effect
+		try {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+			
+			// Success melody: C-E-G-C (major chord arpeggio)
+			const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5-E5-G5-C6
+			let time = audioContext.currentTime;
+			
+			frequencies.forEach((freq) => {
+				const osc = audioContext.createOscillator();
+				const gain = audioContext.createGain();
+				
+				osc.connect(gain);
+				gain.connect(audioContext.destination);
+				
+				osc.frequency.setValueAtTime(freq, time);
+				osc.type = 'sine';
+				
+				gain.gain.setValueAtTime(0, time);
+				gain.gain.linearRampToValueAtTime(0.1, time + 0.01);
+				gain.gain.exponentialRampToValueAtTime(0.001, time + 0.2);
+				
+				osc.start(time);
+				osc.stop(time + 0.2);
+				
+				time += 0.15;
+			});
+		} catch (error) {
+			console.log('Could not play success sound:', error);
+		}
+	};
+
 	if (loading) {
 		return (
 			<div className="flex items-center justify-center py-8">
-				<div className="text-muted-foreground">Loading challenges...</div>
+				<div className="flex items-center gap-2 text-muted-foreground">
+					<div className="w-4 h-4 border-2 border-[#FF0052] border-t-transparent rounded-full animate-spin"></div>
+					Loading challenges...
+				</div>
 			</div>
 		);
 	}
@@ -136,13 +230,13 @@ export default function ChallengeList() {
 	const getStateColor = (state: string) => {
 		switch (state) {
 			case 'open':
-				return 'bg-green-100 text-green-800';
+				return 'bg-green-500/20 text-green-400 border-green-500/50';
 			case 'closed':
-				return 'bg-yellow-100 text-yellow-800';
+				return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50';
 			case 'resolved':
-				return 'bg-blue-100 text-blue-800';
+				return 'bg-blue-500/20 text-blue-400 border-blue-500/50';
 			default:
-				return 'bg-gray-100 text-gray-800';
+				return 'bg-gray-500/20 text-gray-400 border-gray-500/50';
 		}
 	};
 
@@ -153,19 +247,33 @@ export default function ChallengeList() {
 					const winnerOption = challenge.winner_option_id 
 						? challenge.challenge_options.find(opt => opt.id === challenge.winner_option_id)
 						: null;
+					
+					const isCelebrating = celebratingChallengeId === challenge.id;
 
 					return (
-						<Card key={challenge.id} className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl hover:shadow-lg hover:shadow-[#FF0052]/10 transition-all duration-300 transform hover:scale-105">
+						<Card 
+							key={challenge.id} 
+							className={`backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl hover:shadow-lg hover:shadow-[#FF0052]/10 transition-all duration-300 transform hover:scale-105 ${
+								isCelebrating 
+									? 'animate-pulse ring-4 ring-yellow-500/50 shadow-lg shadow-yellow-500/20' 
+									: ''
+							}`}
+						>
 							<CardHeader className="pb-4">
 								<div className="flex items-start justify-between">
 									<div className="flex-1">
-										<CardTitle className="text-lg text-[#f5f5f5]">{challenge.title}</CardTitle>
+										<CardTitle className="text-lg text-[#f5f5f5] flex items-center gap-2">
+											{challenge.title}
+											{isCelebrating && (
+												<Sparkles className="h-5 w-5 text-yellow-500 animate-bounce" />
+											)}
+										</CardTitle>
 										<CardDescription className="mt-1 text-[#f5f5f5]/70">
 											{challenge.event_type}
 										</CardDescription>
 									</div>
 									<Badge className={`${getStateColor(challenge.state)} border border-[#f5f5f5]/20`}>
-										{challenge.state}
+										{challenge.state === 'resolved' && winnerOption ? '🏆 Resolved' : challenge.state}
 									</Badge>
 								</div>
 							</CardHeader>
@@ -184,9 +292,11 @@ export default function ChallengeList() {
 									)}
 
 									{winnerOption && (
-										<div className="flex items-center gap-2 text-sm text-[#f5f5f5]">
+										<div className={`flex items-center gap-2 text-sm text-[#f5f5f5] p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/30 ${
+											isCelebrating ? 'animate-bounce' : ''
+										}`}>
 											<Crown className="h-4 w-4 text-yellow-500" />
-											<span className="font-semibold">Winner: {winnerOption.display_name}</span>
+											<span className="font-semibold">Winner: {winnerOption.display_name} 🎉</span>
 										</div>
 									)}
 									
@@ -200,17 +310,17 @@ export default function ChallengeList() {
 											</div>
 										))}
 										{challenge.challenge_options.length > 3 && (
-											<div className="text-xs text-[#f5f5f5]/50">
+											<div className="text-xs text-[#f5f5f5]/50 text-center">
 												+{challenge.challenge_options.length - 3} more options
 											</div>
 										)}
 									</div>
-
-									<div className="flex gap-2 pt-3">
+									
+									<div className="flex gap-2 pt-2">
 										<Button
 											variant="outline"
 											size="sm"
-											className="flex-1 border-[#FF0052] text-[#FF0052] bg-transparent hover:bg-[#FF0052] hover:text-white hover:border-[#FF0052] transition-all duration-200"
+											className="flex-1 bg-transparent border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#f5f5f5]/10 hover:border-[#f5f5f5]/40"
 										>
 											<Eye className="h-4 w-4 mr-1" />
 											View
@@ -219,24 +329,11 @@ export default function ChallengeList() {
 										{challenge.state === 'open' && (
 											<Button
 												onClick={() => handlePickWinner(challenge)}
-												variant="outline"
 												size="sm"
-												className="flex-1 border-yellow-500 text-yellow-500 bg-transparent hover:bg-yellow-500 hover:text-white hover:border-yellow-500 transition-all duration-200"
+												className="flex-1 bg-gradient-to-r from-[#FF0052] to-[#ff4d7d] hover:from-[#ff4d7d] hover:to-[#FF0052] text-white font-medium transition-all duration-300 transform hover:scale-105"
 											>
 												<Crown className="h-4 w-4 mr-1" />
 												Pick Winner
-											</Button>
-										)}
-										
-										{challenge.state === 'resolved' && (
-											<Button
-												disabled
-												variant="outline"
-												size="sm"
-												className="flex-1 border-green-500 text-green-500 bg-transparent opacity-50"
-											>
-												<Crown className="h-4 w-4 mr-1" />
-												Resolved
 											</Button>
 										)}
 									</div>
@@ -249,44 +346,66 @@ export default function ChallengeList() {
 
 			{/* Winner Selection Modal */}
 			<Dialog open={isWinnerModalOpen} onOpenChange={setIsWinnerModalOpen}>
-				<DialogContent className="backdrop-blur-xl bg-[#0B0518]/95 border border-[#f5f5f5]/20 text-[#f5f5f5]">
+				<DialogContent className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/20 rounded-2xl max-w-md">
 					<DialogHeader>
 						<DialogTitle className="text-xl text-[#f5f5f5] flex items-center gap-2">
 							<Crown className="h-5 w-5 text-yellow-500" />
-							Pick Winner for {selectedChallenge?.title}
+							Select Winner
 						</DialogTitle>
 						<DialogDescription className="text-[#f5f5f5]/70">
-							Select the winning option from the list below. This action cannot be undone.
+							Choose the winning option for &quot;{selectedChallenge?.title}&quot;
 						</DialogDescription>
 					</DialogHeader>
-					
-					<div className="space-y-3 mt-4">
+					<div className="space-y-3 pt-4">
 						{selectedChallenge?.challenge_options.map((option) => (
 							<Button
 								key={option.id}
 								onClick={() => selectWinner(option.id)}
 								disabled={isSelectingWinner}
-								className="w-full justify-start bg-[#f5f5f5]/10 border border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#FF0052] hover:border-[#FF0052] hover:text-white transition-all duration-200 h-12"
+								className="w-full h-auto p-4 bg-transparent border border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#FF0052] hover:border-[#FF0052] hover:text-white transition-all duration-300 justify-start text-left"
 							>
-								<div className="flex items-center justify-between w-full">
-									<div className="flex items-center gap-3">
-										<Trophy className="h-4 w-4" />
-										<span className="font-medium">{option.display_name}</span>
+								<div className="flex items-center gap-3 w-full">
+									<div className="p-2 rounded-lg bg-[#FF0052]/20">
+										<Trophy className="h-4 w-4 text-[#FF0052]" />
 									</div>
-									<span className="text-sm font-mono">{option.token_name}</span>
+									<div className="flex-1">
+										<div className="font-medium">{option.display_name}</div>
+										<div className="text-sm opacity-75">{option.token_name}</div>
+									</div>
+									{isSelectingWinner && (
+										<div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+									)}
 								</div>
 							</Button>
 						))}
+						
+						{isSelectingWinner && (
+							<div className="text-center text-sm text-[#f5f5f5]/70 flex items-center justify-center gap-2 py-2">
+								<CheckCircle className="h-4 w-4 animate-pulse" />
+								Selecting winner...
+							</div>
+						)}
 					</div>
-
-					{isSelectingWinner && (
-						<div className="flex items-center justify-center py-4">
-							<div className="w-6 h-6 border-2 border-[#FF0052]/30 border-t-[#FF0052] rounded-full animate-spin"></div>
-							<span className="ml-2 text-[#f5f5f5]/70">Selecting winner...</span>
-						</div>
-					)}
 				</DialogContent>
 			</Dialog>
+
+			{/* CSS for confetti animation */}
+			<style jsx global>{`
+				@keyframes confetti-fall {
+					0% {
+						transform: translateY(-10px) rotate(0deg);
+						opacity: 1;
+					}
+					100% {
+						transform: translateY(100vh) rotate(720deg);
+						opacity: 0;
+					}
+				}
+				
+				.confetti-piece {
+					border-radius: 2px;
+				}
+			`}</style>
 		</>
 	);
 } 

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const defaultUrl = process.env.VERCEL_URL
@@ -34,6 +35,20 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster 
+            position="top-right"
+            richColors
+            expand={true}
+            duration={4000}
+            toastOptions={{
+              style: {
+                background: 'rgba(15, 23, 42, 0.95)',
+                border: '1px solid rgba(255, 0, 82, 0.3)',
+                color: '#f5f5f5',
+                backdropFilter: 'blur(16px)',
+              },
+            }}
+          />
         </ThemeProvider>
       </body>
     </html>
