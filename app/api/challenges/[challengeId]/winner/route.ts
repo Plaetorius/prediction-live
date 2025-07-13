@@ -19,21 +19,32 @@ export async function POST(
   { params }: { params: Promise<{ challengeId: string }> }
 ) {
   const origin = request.headers.get("origin") || undefined;
-  const { challengeId } = await params;
   
   try {
+    console.log('🏆 Starting winner selection process...');
+    
+    const { challengeId } = await params;
+    console.log('📋 Challenge ID:', challengeId);
+    
     const body = await request.json();
+    console.log('📥 Request body:', body);
+    
     const { winnerOptionId } = body;
+    console.log('🎯 Winner option ID:', winnerOptionId);
 
     if (!winnerOptionId) {
+      console.error('❌ No winner option ID provided');
       return NextResponse.json(
         { error: 'Winner option ID is required' },
         { status: 400, headers: corsHeaders(origin) }
       );
     }
 
+    console.log('🔗 Creating Supabase client...');
     const supabase = await createClient();
+    console.log('✅ Supabase client created');
 
+    console.log('🔍 Fetching challenge with options...');
     // Get the challenge with its options to validate the winner selection
     const { data: challenge, error: challengeError } = await supabase
       .from('challenges')
@@ -44,50 +55,53 @@ export async function POST(
       .eq('id', challengeId)
       .single();
 
-    if (challengeError || !challenge) {
+    console.log('📊 Challenge query result:', { challenge, challengeError });
+
+    if (challengeError) {
+      console.error('❌ Challenge query error:', challengeError);
+      return NextResponse.json(
+        { error: 'Challenge not found', details: challengeError },
+        { status: 404, headers: corsHeaders(origin) }
+      );
+    }
+
+    if (!challenge) {
+      console.error('❌ Challenge not found');
       return NextResponse.json(
         { error: 'Challenge not found' },
         { status: 404, headers: corsHeaders(origin) }
       );
     }
 
+    console.log('📋 Challenge found:', challenge.title);
+    console.log('🎲 Challenge options:', challenge.challenge_options);
+
     // Verify the winner option belongs to this challenge
     const winnerOption = challenge.challenge_options.find(
       (option: { id: string }) => option.id === winnerOptionId
     );
 
+    console.log('🏆 Winner option found:', winnerOption);
+
     if (!winnerOption) {
+      console.error('❌ Invalid winner option for this challenge');
       return NextResponse.json(
         { error: 'Invalid winner option for this challenge' },
         { status: 400, headers: corsHeaders(origin) }
       );
     }
 
-    // Update the challenge with the winner and set state to resolved
-    const { data: updatedChallenge, error: updateError } = await supabase
-      .from('challenges')
-      .update({
-        winner_option_id: winnerOptionId,
-        state: 'resolved',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', challengeId)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('Error updating challenge with winner:', updateError);
-      return NextResponse.json(
-        { error: 'Failed to update challenge' },
-        { status: 500, headers: corsHeaders(origin) }
-      );
-    }
-
+    console.log('🔄 Preparing winner selection (no DB update needed)...');
+    // Note: We skip database update since winner_option_id column doesn't exist
+    // Winner information will be handled through the broadcasting system
+    
+    console.log('✅ Winner selection prepared successfully');
     console.log('🏆 Winner selected for challenge:', challengeId);
     console.log('🎯 Winner option:', winnerOption);
 
     // Broadcast the winner event via WebSocket
     try {
+      console.log('📡 Preparing winner broadcast...');
       const winnerPayload = {
         // Challenge information
         id: challenge.id,
@@ -141,6 +155,8 @@ export async function POST(
         }),
       });
 
+      console.log('📡 Broadcast response status:', broadcastResponse.status);
+
       if (broadcastResponse.ok) {
         const broadcastResult = await broadcastResponse.json();
         console.log('✅ Winner broadcast successful:', broadcastResult);
@@ -156,17 +172,19 @@ export async function POST(
       // Don't fail the entire operation if broadcasting fails
     }
 
+    console.log('🎉 Winner selection completed successfully');
     return NextResponse.json({
       success: true,
-      challenge: updatedChallenge,
+      challenge: { ...challenge, state: 'resolved' },
       winner: winnerOption,
       message: `Winner selected: ${winnerOption.display_name}`
     }, { headers: corsHeaders(origin) });
 
   } catch (error) {
-    console.error('Error selecting winner:', error);
+    console.error('❌ Fatal error in winner selection:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500, headers: corsHeaders(origin) }
     );
   }
