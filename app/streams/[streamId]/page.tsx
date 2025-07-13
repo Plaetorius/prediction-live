@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +10,6 @@ import {
   Trophy, 
   Clock, 
   Crown, 
-  Sparkles, 
-  Eye, 
   TrendingUp, 
   Users, 
   DollarSign,
@@ -70,7 +68,7 @@ export default function StreamPage() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isPolling, setIsPolling] = useState(false);
 
-  const fetchChallenges = async (showLoading = true) => {
+  const fetchChallenges = useCallback(async (showLoading = true) => {
     try {
       if (showLoading) {
         setLoading(true);
@@ -101,11 +99,11 @@ export default function StreamPage() {
       setLoading(false);
       setIsPolling(false);
     }
-  };
+  }, [streamId]);
 
   useEffect(() => {
     fetchChallenges();
-  }, [streamId]);
+  }, [fetchChallenges]);
 
   // Set up polling every 3 seconds
   useEffect(() => {
@@ -114,7 +112,7 @@ export default function StreamPage() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [streamId]);
+  }, [fetchChallenges]);
 
   const getStateColor = (state: string) => {
     switch (state) {
@@ -257,7 +255,7 @@ export default function StreamPage() {
             <div className="text-6xl mb-4">🎯</div>
             <h3 className="text-xl text-[#f5f5f5] mb-2">No challenges yet</h3>
             <p className="text-[#f5f5f5]/70">
-              Challenges for this stream will appear here when they're created.
+              Challenges for this stream will appear here when they&apos;re created.
             </p>
           </div>
         ) : (
