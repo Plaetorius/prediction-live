@@ -17,12 +17,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 		// Parse request body
 		const body = await request.json();
-		const { option_id, amount, token_name } = body;
+		const { option_id, amount, token_name, wallet_address } = body;
 
 		// Validate required fields
-		if (!option_id || !amount || !token_name) {
+		if (!option_id || !amount || !token_name || !wallet_address) {
 			return NextResponse.json(
-				{ error: 'Missing required fields: option_id, amount, token_name' },
+				{ error: 'Missing required fields: option_id, amount, token_name, wallet_address' },
 				{ status: 400, headers: corsHeaders(origin) }
 			);
 		}
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 			challengeId,
 			optionId: option_id,
 			amount,
-			tokenName: token_name
+			tokenName: token_name,
+			walletAddress: wallet_address
 		});
 
 		// Insert prediction into database
@@ -50,7 +51,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 				option_id: option_id,
 				token_name: token_name,
 				amount: amount,
-				status: 'pending'
+				status: 'pending',
+				wallet_address: wallet_address
 			})
 			.select('*')
 			.single();
@@ -74,7 +76,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 				amount: prediction.amount,
 				tokenName: prediction.token_name,
 				status: prediction.status,
-				placedAt: prediction.placed_at
+				placedAt: prediction.placed_at,
+				walletAddress: prediction.wallet_address
 			}
 		}, { 
 			status: 201, 
