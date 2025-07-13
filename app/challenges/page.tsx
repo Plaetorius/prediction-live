@@ -72,8 +72,13 @@ export default function ChallengesPage() {
 			if (!response.ok) {
 				toast.error(`Failed to create challenge: ${result.error}`);
 			} else {
-				toast.success("Challenge created successfully!");
-	}
+				console.log('✅ Challenge created:', result);
+				console.log('🆔 Challenge ID:', result.challenge?.id);
+				console.log('📋 Challenge Title:', result.challenge?.title);
+				console.log('⏰ Closing At:', result.challenge?.closing_at);
+				
+				toast.success(`Challenge created successfully! ID: ${result.challenge?.id || 'Unknown'}`);
+			}
 		} catch (error) {
 			toast.error("An unexpected error occurred");
 			console.error(error);

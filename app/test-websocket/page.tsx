@@ -59,7 +59,28 @@ export default function TestWebSocketPage() {
 				try {
 					console.log('📨 Received SSE message:', event.data);
 					const data = JSON.parse(event.data);
-					addMessage(`📨 Received: ${JSON.stringify(data, null, 2)}`);
+					
+					// Handle different event types with special formatting
+					if (data.type === 'challenge:winner') {
+						addMessage(`🏆 WINNER SELECTED!`);
+						addMessage(`📋 Challenge: ${data.data.title}`);
+						addMessage(`👑 Winner: ${data.data.winner.display_name} (${data.data.winner.token_name})`);
+						addMessage(`🎯 Event Type: ${data.data.event_type}`);
+						addMessage(`📊 Total Options: ${data.data.options.length}`);
+						
+						// Show all options with winner indication
+						data.data.options.forEach((option: { display_name: string; token_name: string; is_winner: boolean }) => {
+							const winnerIcon = option.is_winner ? '👑' : '❌';
+							addMessage(`  ${winnerIcon} ${option.display_name} (${option.token_name})`);
+						});
+					} else if (data.type === 'challenge:new') {
+						addMessage(`🆕 NEW CHALLENGE CREATED!`);
+						addMessage(`📋 Title: ${data.data.title}`);
+						addMessage(`🎯 Event Type: ${data.data.event_type}`);
+						addMessage(`📊 Options: ${data.data.options.length}`);
+					} else {
+						addMessage(`📨 Received: ${JSON.stringify(data, null, 2)}`);
+					}
 				} catch (error) {
 					console.error('❌ Error parsing SSE message:', error);
 					addMessage(`❌ Error parsing message: ${error}`);
@@ -397,7 +418,7 @@ export default function TestWebSocketPage() {
 						</div>
 
 						{/* Test Buttons Grid */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 							<Button
 								onClick={testSimpleBroadcast}
 								disabled={!isConnected || isLoading}
@@ -452,6 +473,85 @@ export default function TestWebSocketPage() {
 								className="bg-yellow-500 hover:bg-yellow-600 text-white disabled:opacity-50 h-10 text-sm"
 							>
 								Challenge Details
+							</Button>
+							<Button
+								onClick={async () => {
+									if (!isConnected) {
+										addMessage('❌ Not connected to stream');
+										return;
+									}
+									
+									setIsLoading(true);
+									addMessage('🏆 Testing winner selection event...');
+									
+									try {
+										// Simulate a winner selection broadcast
+										const broadcastResponse = await fetch('/api/broadcast', {
+											method: 'POST',
+											headers: {
+												'Content-Type': 'application/json',
+											},
+											body: JSON.stringify({
+												streamId: streamId,
+												event: 'challenge:winner',
+												payload: {
+													id: 'test-challenge-winner-' + Date.now(),
+													title: 'Test Challenge Winner Event',
+													event_type: 'test_event',
+													stream_id: streamId,
+													state: 'resolved',
+													winner: {
+														option_id: 'winner-option-1',
+														option_key: 'team_a',
+														display_name: 'Team Alpha Wins!',
+														token_name: 'TEAM_ALPHA',
+													},
+													options: [
+														{
+															id: 'winner-option-1',
+															option_key: 'team_a',
+															display_name: 'Team Alpha Wins!',
+															token_name: 'TEAM_ALPHA',
+															is_winner: true,
+														},
+														{
+															id: 'winner-option-2',
+															option_key: 'team_b',
+															display_name: 'Team Beta',
+															token_name: 'TEAM_BETA',
+															is_winner: false,
+														}
+													],
+													metadata: {
+														total_options: 2,
+														stream_id: streamId,
+														event_type: 'test_event',
+														winner_selected_at: new Date().toISOString(),
+													},
+													timestamp: new Date().toISOString()
+												}
+											}),
+										});
+
+										if (broadcastResponse.ok) {
+											const result = await broadcastResponse.json();
+											addMessage(`✅ Winner test broadcast sent successfully!`);
+											addMessage(`📊 Sent to: ${result.sentCount || 'unknown'} connections`);
+											addMessage(`🏆 Winner: Team Alpha Wins!`);
+										} else {
+											const error = await broadcastResponse.json();
+											addMessage(`❌ Failed to send winner test: ${error.error}`);
+										}
+									} catch (error) {
+										addMessage(`❌ Error with winner test: ${error}`);
+									} finally {
+										setIsLoading(false);
+									}
+								}}
+								disabled={!isConnected || isLoading}
+								className="bg-purple-500 hover:bg-purple-600 text-white disabled:opacity-50 h-10 text-sm"
+							>
+								Winner Event
 							</Button>
 							<Button
 								onClick={async () => {

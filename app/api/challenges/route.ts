@@ -105,6 +105,9 @@ export async function POST(request: NextRequest) {
 
     const { challenge, options } = result.data as { challenge: Challenge; options: ChallengeOption[] };
 
+    console.log('🎯 API: Challenge created successfully with ID:', challenge.id);
+    console.log('📋 API: Full challenge object:', challenge);
+
     // Broadcast the new challenge via WebSocket using the broadcast endpoint
     try {
       console.log('🔔 Broadcasting new challenge to stream:', actualStreamId);

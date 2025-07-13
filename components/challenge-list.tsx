@@ -3,8 +3,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye, Users, Trophy, Clock } from 'lucide-react';
+import { Eye, Trophy, Clock, Crown } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface ChallengeOption {
 	id: string;
@@ -21,6 +29,8 @@ interface Challenge {
 	started_at: string;
 	created_at: string;
 	closing_at?: string;
+	stream_id?: string;
+	winner_option_id?: string;
 	challenge_options: ChallengeOption[];
 }
 
@@ -28,6 +38,9 @@ export default function ChallengeList() {
 	const [challenges, setChallenges] = useState<Challenge[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+	const [isWinnerModalOpen, setIsWinnerModalOpen] = useState(false);
+	const [isSelectingWinner, setIsSelectingWinner] = useState(false);
 
 	useEffect(() => {
 		const fetchChallenges = async () => {
@@ -48,6 +61,53 @@ export default function ChallengeList() {
 
 		fetchChallenges();
 	}, []);
+
+	const handlePickWinner = (challenge: Challenge) => {
+		setSelectedChallenge(challenge);
+		setIsWinnerModalOpen(true);
+	};
+
+	const selectWinner = async (optionId: string) => {
+		if (!selectedChallenge) return;
+
+		setIsSelectingWinner(true);
+		
+		try {
+			const response = await fetch(`/api/challenges/${selectedChallenge.id}/winner`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({
+					winnerOptionId: optionId,
+				}),
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				toast.error(`Failed to select winner: ${result.error}`);
+			} else {
+				const winnerOption = selectedChallenge.challenge_options.find(opt => opt.id === optionId);
+				toast.success(`Winner selected: ${winnerOption?.display_name || 'Unknown'}!`);
+				
+				// Update the challenge state locally
+				setChallenges(prev => prev.map(challenge => 
+					challenge.id === selectedChallenge.id 
+						? { ...challenge, state: 'resolved', winner_option_id: optionId }
+						: challenge
+				));
+				
+				setIsWinnerModalOpen(false);
+				setSelectedChallenge(null);
+			}
+		} catch (error) {
+			toast.error("An unexpected error occurred");
+			console.error('Winner selection error:', error);
+		} finally {
+			setIsSelectingWinner(false);
+		}
+	};
 
 	if (loading) {
 		return (
@@ -87,74 +147,146 @@ export default function ChallengeList() {
 	};
 
 	return (
-		<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-			{challenges.map((challenge) => (
-				<Card key={challenge.id} className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl hover:shadow-lg hover:shadow-[#FF0052]/10 transition-all duration-300 transform hover:scale-105">
-					<CardHeader className="pb-4">
-						<div className="flex items-start justify-between">
-							<div className="flex-1">
-								<CardTitle className="text-lg text-[#f5f5f5]">{challenge.title}</CardTitle>
-								<CardDescription className="mt-1 text-[#f5f5f5]/70">
-									{challenge.event_type}
-								</CardDescription>
-							</div>
-							<Badge className={`${getStateColor(challenge.state)} border border-[#f5f5f5]/20`}>
-								{challenge.state}
-							</Badge>
-						</div>
-					</CardHeader>
-					<CardContent>
-						<div className="space-y-4">
-							<div className="flex items-center gap-2 text-sm text-[#f5f5f5]/70">
-								<Trophy className="h-4 w-4 text-[#FF0052]" />
-								<span>{challenge.challenge_options.length} options</span>
-							</div>
-							
-							{challenge.closing_at && (
-								<div className="flex items-center gap-2 text-sm text-[#f5f5f5]/70">
-									<Clock className="h-4 w-4 text-[#FF0052]" />
-									<span>Closes: {new Date(challenge.closing_at).toLocaleDateString()} at {new Date(challenge.closing_at).toLocaleTimeString()}</span>
-								</div>
-							)}
-							
-							<div className="space-y-2">
-								{challenge.challenge_options.slice(0, 3).map((option) => (
-									<div key={option.id} className="flex items-center justify-between text-sm">
-										<span className="font-medium text-[#f5f5f5]">{option.display_name}</span>
-										<span className="text-[#FF0052] font-semibold">
-											{option.token_name || 'N/A'}
-										</span>
-									</div>
-								))}
-								{challenge.challenge_options.length > 3 && (
-									<div className="text-xs text-[#f5f5f5]/50">
-										+{challenge.challenge_options.length - 3} more options
-									</div>
-								)}
-							</div>
+		<>
+			<div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+				{challenges.map((challenge) => {
+					const winnerOption = challenge.winner_option_id 
+						? challenge.challenge_options.find(opt => opt.id === challenge.winner_option_id)
+						: null;
 
-							<div className="flex gap-2 pt-3">
-								<Button
-									variant="outline"
-									size="sm"
-									className="flex-1 border-[#FF0052] text-[#FF0052] bg-transparent hover:bg-[#FF0052] hover:text-white hover:border-[#FF0052] transition-all duration-200"
-								>
-									<Eye className="h-4 w-4 mr-1" />
-									View
-								</Button>
-								<Button
-									variant="outline"
-									size="sm"
-									className="flex-1 border-[#FF0052] text-[#FF0052] bg-transparent hover:bg-[#FF0052] hover:text-white hover:border-[#FF0052] transition-all duration-200"
-								>
-									<Users className="h-4 w-4 mr-1" />
-									Predict
-								</Button>
-							</div>
+					return (
+						<Card key={challenge.id} className="backdrop-blur-xl bg-[#f5f5f5]/5 border border-[#f5f5f5]/10 rounded-2xl hover:shadow-lg hover:shadow-[#FF0052]/10 transition-all duration-300 transform hover:scale-105">
+							<CardHeader className="pb-4">
+								<div className="flex items-start justify-between">
+									<div className="flex-1">
+										<CardTitle className="text-lg text-[#f5f5f5]">{challenge.title}</CardTitle>
+										<CardDescription className="mt-1 text-[#f5f5f5]/70">
+											{challenge.event_type}
+										</CardDescription>
+									</div>
+									<Badge className={`${getStateColor(challenge.state)} border border-[#f5f5f5]/20`}>
+										{challenge.state}
+									</Badge>
+								</div>
+							</CardHeader>
+							<CardContent>
+								<div className="space-y-4">
+									<div className="flex items-center gap-2 text-sm text-[#f5f5f5]/70">
+										<Trophy className="h-4 w-4 text-[#FF0052]" />
+										<span>{challenge.challenge_options.length} options</span>
+									</div>
+									
+									{challenge.closing_at && (
+										<div className="flex items-center gap-2 text-sm text-[#f5f5f5]/70">
+											<Clock className="h-4 w-4 text-[#FF0052]" />
+											<span>Closes: {new Date(challenge.closing_at).toLocaleDateString()} at {new Date(challenge.closing_at).toLocaleTimeString()}</span>
+										</div>
+									)}
+
+									{winnerOption && (
+										<div className="flex items-center gap-2 text-sm text-[#f5f5f5]">
+											<Crown className="h-4 w-4 text-yellow-500" />
+											<span className="font-semibold">Winner: {winnerOption.display_name}</span>
+										</div>
+									)}
+									
+									<div className="space-y-2">
+										{challenge.challenge_options.slice(0, 3).map((option) => (
+											<div key={option.id} className="flex items-center justify-between text-sm">
+												<span className="font-medium text-[#f5f5f5]">{option.display_name}</span>
+												<span className="text-[#FF0052] font-semibold">
+													{option.token_name || 'N/A'}
+												</span>
+											</div>
+										))}
+										{challenge.challenge_options.length > 3 && (
+											<div className="text-xs text-[#f5f5f5]/50">
+												+{challenge.challenge_options.length - 3} more options
+											</div>
+										)}
+									</div>
+
+									<div className="flex gap-2 pt-3">
+										<Button
+											variant="outline"
+											size="sm"
+											className="flex-1 border-[#FF0052] text-[#FF0052] bg-transparent hover:bg-[#FF0052] hover:text-white hover:border-[#FF0052] transition-all duration-200"
+										>
+											<Eye className="h-4 w-4 mr-1" />
+											View
+										</Button>
+										
+										{challenge.state === 'open' && (
+											<Button
+												onClick={() => handlePickWinner(challenge)}
+												variant="outline"
+												size="sm"
+												className="flex-1 border-yellow-500 text-yellow-500 bg-transparent hover:bg-yellow-500 hover:text-white hover:border-yellow-500 transition-all duration-200"
+											>
+												<Crown className="h-4 w-4 mr-1" />
+												Pick Winner
+											</Button>
+										)}
+										
+										{challenge.state === 'resolved' && (
+											<Button
+												disabled
+												variant="outline"
+												size="sm"
+												className="flex-1 border-green-500 text-green-500 bg-transparent opacity-50"
+											>
+												<Crown className="h-4 w-4 mr-1" />
+												Resolved
+											</Button>
+										)}
+									</div>
+								</div>
+							</CardContent>
+						</Card>
+					);
+				})}
+			</div>
+
+			{/* Winner Selection Modal */}
+			<Dialog open={isWinnerModalOpen} onOpenChange={setIsWinnerModalOpen}>
+				<DialogContent className="backdrop-blur-xl bg-[#0B0518]/95 border border-[#f5f5f5]/20 text-[#f5f5f5]">
+					<DialogHeader>
+						<DialogTitle className="text-xl text-[#f5f5f5] flex items-center gap-2">
+							<Crown className="h-5 w-5 text-yellow-500" />
+							Pick Winner for {selectedChallenge?.title}
+						</DialogTitle>
+						<DialogDescription className="text-[#f5f5f5]/70">
+							Select the winning option from the list below. This action cannot be undone.
+						</DialogDescription>
+					</DialogHeader>
+					
+					<div className="space-y-3 mt-4">
+						{selectedChallenge?.challenge_options.map((option) => (
+							<Button
+								key={option.id}
+								onClick={() => selectWinner(option.id)}
+								disabled={isSelectingWinner}
+								className="w-full justify-start bg-[#f5f5f5]/10 border border-[#f5f5f5]/20 text-[#f5f5f5] hover:bg-[#FF0052] hover:border-[#FF0052] hover:text-white transition-all duration-200 h-12"
+							>
+								<div className="flex items-center justify-between w-full">
+									<div className="flex items-center gap-3">
+										<Trophy className="h-4 w-4" />
+										<span className="font-medium">{option.display_name}</span>
+									</div>
+									<span className="text-sm font-mono">{option.token_name}</span>
+								</div>
+							</Button>
+						))}
+					</div>
+
+					{isSelectingWinner && (
+						<div className="flex items-center justify-center py-4">
+							<div className="w-6 h-6 border-2 border-[#FF0052]/30 border-t-[#FF0052] rounded-full animate-spin"></div>
+							<span className="ml-2 text-[#f5f5f5]/70">Selecting winner...</span>
 						</div>
-					</CardContent>
-				</Card>
-			))}
-		</div>
+					)}
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 } 

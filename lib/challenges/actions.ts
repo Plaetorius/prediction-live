@@ -37,13 +37,16 @@ export async function createChallenge(data: CreateChallengeData) {
 			title: data.title,
 			closing_at: closingAt.toISOString(),
 		})
-		.select()
+		.select('*')
 		.single();
 
 	if (challengeError) {
 		console.error("Error creating challenge:", challengeError);
 		return { error: challengeError.message };
 	}
+
+	console.log('✅ Challenge created with ID:', challenge.id);
+	console.log('📊 Challenge data:', challenge);
 
 	// Then, create the challenge options
 	const optionsToInsert = data.options.map(option => ({
@@ -62,6 +65,8 @@ export async function createChallenge(data: CreateChallengeData) {
 		console.error("Error creating challenge options:", optionsError);
 		return { error: optionsError.message };
 	}
+
+	console.log('✅ Challenge options created:', options.length, 'options for challenge ID:', challenge.id);
 
 	return { 
 		data: { 

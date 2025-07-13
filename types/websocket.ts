@@ -28,6 +28,7 @@ export interface Challenge {
   createdAt?: string;
   updatedAt?: string;
   closingAt?: string;
+  winnerOptionId?: string;
   options: ChallengeOption[];
   metadata?: {
     total_options: number;
@@ -48,4 +49,28 @@ export interface PredictionResponse {
   success: boolean;
   message: string;
   predictionId?: string;
+}
+
+export interface WinnerSelection {
+  option_id: string;
+  option_key: string;
+  display_name: string;
+  token_name: string;
+}
+
+export interface ChallengeWinnerEvent {
+  id: string;
+  title: string;
+  event_type: string;
+  stream_id: string;
+  state: 'resolved';
+  winner: WinnerSelection;
+  options: Array<ChallengeOption & { is_winner: boolean }>;
+  metadata: {
+    total_options: number;
+    stream_id: string;
+    event_type: string;
+    winner_selected_at: string;
+  };
+  timestamp: string;
 } 
