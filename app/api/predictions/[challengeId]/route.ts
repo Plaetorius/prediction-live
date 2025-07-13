@@ -14,17 +14,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 	try {
 		// Create Supabase client
 		const supabase = await createClient();
-		
-		// Get the current user
-		const { data: { user }, error: authError } = await supabase.auth.getUser();
-		
-		if (authError || !user) {
-			console.error('❌ Authentication error:', authError);
-			return NextResponse.json(
-				{ error: 'Authentication required' }, 
-				{ status: 401, headers: corsHeaders(origin) }
-			);
-		}
 
 		// Parse request body
 		const body = await request.json();
@@ -48,7 +37,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
 		console.log('🎯 Creating prediction:', {
 			challengeId,
-			userId: user.id,
 			optionId: option_id,
 			amount,
 			tokenName: token_name
@@ -58,7 +46,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 		const { data: prediction, error: insertError } = await supabase
 			.from('predictions')
 			.insert({
-				user_id: user.id,
 				challenge_id: challengeId,
 				option_id: option_id,
 				token_name: token_name,
