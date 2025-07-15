@@ -51,14 +51,14 @@ export default function Home() {
           <div className="text-center max-w-5xl mx-auto transform-gpu animate-fade-in-up">
             <div className="relative mb-6 sm:mb-8">
               <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-9xl font-black text-[#f5f5f5] leading-none transform-gpu hover:scale-105 transition-transform duration-700">
-                PREDICT
+                PREDICTION
                 <span className="block text-[#FF0052] bg-gradient-to-r from-[#FF0052] via-[#ff4d7d] to-[#FF0052] bg-clip-text text-transparent animate-pulse">
                   LIVE
                 </span>
               </h1>
               {/* Glow effect */}
               <div className="absolute inset-0 text-4xl sm:text-6xl md:text-7xl lg:text-9xl font-black text-[#FF0052]/20 blur-xl -z-10 animate-pulse">
-                PREDICT LIVE
+                PREDICTION LIVE
               </div>
             </div>
             
